@@ -1,0 +1,21 @@
+# InfraStack Configuration
+# Copy this file to /etc/infrastack/infrastack.conf and customize as needed
+
+# Disk usage thresholds (percentage)
+DISK_WARNING_THRESHOLD=80
+DISK_CRITICAL_THRESHOLD=90
+
+# Memory usage threshold (percentage)
+MEMORY_WARNING_THRESHOLD=80
+
+# Load average warning multiplier (times CPU count)
+LOAD_WARNING_MULTIPLIER=1.5
+
+# Critical services that must be running
+CRITICAL_SERVICES=("ssh")
+
+# Optional services to monitor (won't trigger critical alerts)
+OPTIONAL_SERVICES=("nginx" "apache2" "mysql" "mariadb" "postgresql")
+
+# Xdebug output directory
+XDEBUG_OUTPUT_DIR="/tmp/xdebug"
