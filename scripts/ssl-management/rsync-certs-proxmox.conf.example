@@ -1,0 +1,17 @@
+# Proxmox SSL Sync Configuration Example
+
+# ===== Remote Certificate Source =====
+# For external servers:
+REMOTEHOST=hosting1.tecnosoul.com.ar
+REMOTEPORT=2200
+
+# For marte.ts (hosting1 is local VM):
+# REMOTEHOST=192.168.1.100
+# REMOTEPORT=22
+
+# ===== Optional Overrides =====
+# REMOTEUSER="tecno"
+# REMOTEDIR=/home/tecno/
+# LOCALDIR=/tmp/ssl-staging/
+# PROXMOX_CERT_DIR=/etc/pve/local
+# LOG_FILE=/var/log/ssl-cert-sync.log

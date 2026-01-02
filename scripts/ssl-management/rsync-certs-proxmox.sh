@@ -6,12 +6,15 @@
 # Repository: https://github.com/TecnoSoul/InfraStack
 #
 # Configuration:
-#   Create /root/.rsync-certs-proxmox.conf to override defaults
+#   Create .rsync-certs-proxmox.conf in the same directory as this script
 #   See rsync-certs-proxmox.conf.example for options
 ################################################################################
 
+# ===== SCRIPT DIRECTORY DETECTION =====
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ===== DEFAULT CONFIGURATION =====
-# These can be overridden in /root/.rsync-certs-proxmox.conf
+# These can be overridden in .rsync-certs-proxmox.conf
 
 LOCALDIR=/tmp/ssl-staging/
 REMOTEHOST=hosting1.tecnosoul.com.ar
@@ -39,7 +42,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -h, --help                   Show this help message"
             echo ""
             echo "Configuration:"
-            echo "  Create /root/.rsync-certs-proxmox.conf to override defaults"
+            echo "  Create .rsync-certs-proxmox.conf in $SCRIPT_DIR"
             echo ""
             exit 0
             ;;
@@ -52,7 +55,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ===== LOAD LOCAL CONFIG (if exists) =====
-CONFIG_FILE="/root/.rsync-certs-proxmox.conf"
+CONFIG_FILE="$SCRIPT_DIR/.rsync-certs-proxmox.conf"
 CONFIG_SOURCE="defaults"
 
 if [ -f "$CONFIG_FILE" ]; then
@@ -66,6 +69,7 @@ echo "╔═══════════════════════�
 echo "║        Proxmox SSL Certificate Sync Configuration         ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
+echo "  Script location:    $SCRIPT_DIR"
 echo "  Hostname:           $(hostname -f)"
 echo "  Config source:      $CONFIG_SOURCE"
 echo ""
