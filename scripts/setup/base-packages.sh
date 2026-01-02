@@ -34,7 +34,7 @@ BASE_PACKAGES=(
     "dnsutils"       # DNS utilities (dig, nslookup)
     "nmap"           # Network scanner
     "mc"             # Midnight Commander file manager
-    "mlocate"        # File indexing (locate command)
+    "locate"        # File indexing (locate command)
     "git"            # Version control
     "zsh"            # Advanced shell
 )

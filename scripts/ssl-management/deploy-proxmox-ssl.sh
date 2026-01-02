@@ -9,7 +9,7 @@
 # Usage: ./deploy-proxmox-ssl.sh
 # 
 # This script deploys wildcard SSL certificates from Virtualmin to Proxmox hosts
-# Certificates are sourced from /home/tecno/ssl.* (managed by Virtualmin)
+# Certificates are sourced from /home/username/ssl.* (managed by Virtualmin)
 # and deployed to configured Proxmox hosts
 ################################################################################
 
