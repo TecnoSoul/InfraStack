@@ -22,17 +22,21 @@ mkdir -p $LOCALDIR
 rsync -arz -e "ssh -p $REMOTEPORT" --include 'ssl.*' --exclude '*' \
     $REMOTEUSER@$REMOTEHOST:$REMOTEDIR $LOCALDIR
 
-# Prepare Proxmox certificate format (cert + key combined)
-cat $LOCALDIR/ssl.cert $LOCALDIR/ssl.key > $LOCALDIR/pveproxy-ssl.pem
-cp $LOCALDIR/ssl.key $LOCALDIR/pveproxy-ssl.key
+# Backup existing Proxmox certificates
+if [ -f $PROXMOX_CERT_DIR/pve-ssl.pem ]; then
+    cp $PROXMOX_CERT_DIR/pve-ssl.pem $PROXMOX_CERT_DIR/pve-ssl.pem.backup.$(date +%Y%m%d)
+    cp $PROXMOX_CERT_DIR/pve-ssl.key $PROXMOX_CERT_DIR/pve-ssl.key.backup.$(date +%Y%m%d)
+fi
 
-# Set permissions
-chmod 600 $LOCALDIR/pveproxy-ssl.pem
-chmod 600 $LOCALDIR/pveproxy-ssl.key
+# Prepare Proxmox certificate format (cert + key combined for PEM)
+cat $LOCALDIR/ssl.cert $LOCALDIR/ssl.key > $PROXMOX_CERT_DIR/pve-ssl.pem
+cp $LOCALDIR/ssl.key $PROXMOX_CERT_DIR/pve-ssl.key
 
-# Deploy to Proxmox
-cp $LOCALDIR/pveproxy-ssl.pem $PROXMOX_CERT_DIR/
-cp $LOCALDIR/pveproxy-ssl.key $PROXMOX_CERT_DIR/
+# Set correct permissions (Proxmox expects these)
+chmod 640 $PROXMOX_CERT_DIR/pve-ssl.pem
+chmod 640 $PROXMOX_CERT_DIR/pve-ssl.key
+chown root:www-data $PROXMOX_CERT_DIR/pve-ssl.pem
+chown root:www-data $PROXMOX_CERT_DIR/pve-ssl.key
 
 # Restart pveproxy
 systemctl restart pveproxy
@@ -41,6 +45,6 @@ systemctl restart pveproxy
 rm -rf $LOCALDIR
 
 # Log completion
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Proxmox SSL certificates updated" >> /var/log/ssl-cert-sync.log
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Proxmox SSL certificates updated on $(hostname)" >> /var/log/ssl-cert-sync.log
 
 #script END
