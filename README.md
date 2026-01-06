@@ -77,6 +77,24 @@ infrastack setup zsh
 # Install Zsh for specific user
 infrastack setup zsh username
 ```
+#### SSL Management
+```bash
+# Sync SSL certificates to Proxmox (interactive)
+/path/to/InfraStack/scripts/ssl-management/rsync-certs-proxmox.sh
+
+# Automated sync (for cron, skip confirmation)
+/path/to/InfraStack/scripts/ssl-management/rsync-certs-proxmox.sh --yes
+
+# Show help
+/path/to/InfraStack/scripts/ssl-management/rsync-certs-proxmox.sh --help
+```
+
+**Configuration:**
+Create a local config file in the same directory:
+```bash
+cp rsync-certs-proxmox.conf.example .rsync-certs-proxmox.conf
+nano .rsync-certs-proxmox.conf
+```
 
 #### PHP & Xdebug Management
 
@@ -114,6 +132,14 @@ Exit codes:
 - `0` - Healthy (all checks passed)
 - `1` - Warnings (some issues detected)
 - `2` - Critical (serious issues)
+
+### SSL Certificate Management
+
+- **Proxmox SSL Sync**: Automatically sync wildcard certificates to Proxmox hosts
+  - Pull-based architecture (each server pulls from source)
+  - Configurable via local config files
+  - Support for internal and external networks
+  - Automated via cron
 
 #### Other
 
