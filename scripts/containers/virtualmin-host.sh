@@ -203,8 +203,7 @@ install_virtualmin_prereqs() {
 
     pct exec "$ctid" -- bash -c '
         export DEBIAN_FRONTEND=noninteractive
-        apt-get install -y wget curl perl libwww-perl apt-transport-https \
-            software-properties-common gnupg2
+        apt-get install -y wget curl perl libwww-perl apt-transport-https gnupg2
     '
 }
 
