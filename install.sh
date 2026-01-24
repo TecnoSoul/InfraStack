@@ -18,8 +18,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-INSTALL_DIR="/opt/infrastack"
-BIN_LINK="/usr/local/bin/infrastack"
+# Use /usr/bin for symlink (always in PATH, unlike /usr/local/bin)
+BIN_LINK="/usr/bin/infrastack"
 
 # Simple logging functions (before common.sh is available)
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
@@ -36,52 +36,37 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 log_info "InfraStack Installation"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-log_info "Installation directory: $INSTALL_DIR"
 log_info "Source directory: $SCRIPT_DIR"
 echo ""
 
-# Check if already installed
-if [[ -d "$INSTALL_DIR" ]]; then
-    log_info "InfraStack is already installed at $INSTALL_DIR"
-    read -rp "Reinstall/update? [y/N]: " response
-    if [[ ! "$response" =~ ^[yY]$ ]]; then
-        log_info "Installation cancelled"
-        exit 0
-    fi
-    log_step "Removing existing installation"
-    rm -rf "$INSTALL_DIR"
+# Check if this is a git repository
+if [[ -d "$SCRIPT_DIR/.git" ]]; then
+    log_info "Git repository detected - will create symlink to source"
+else
+    log_info "Not a git repository - will create symlink to source anyway"
+    log_info "For updates via git pull, clone from: https://github.com/TecnoSoul/InfraStack.git"
 fi
-
-# Create installation directory
-log_step "Creating installation directory"
-mkdir -p "$INSTALL_DIR"
-
-# Copy files
-log_step "Copying InfraStack files"
-cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
-
-# Remove install.sh from installed location (avoid recursion)
-rm -f "$INSTALL_DIR/install.sh"
+echo ""
 
 # Make all scripts executable
 log_step "Setting permissions"
-find "$INSTALL_DIR/scripts" -type f -name "*.sh" -exec chmod +x {} \;
-chmod +x "$INSTALL_DIR/infrastack.sh"
+find "$SCRIPT_DIR/scripts" -type f -name "*.sh" -exec chmod +x {} \;
+chmod +x "$SCRIPT_DIR/infrastack.sh"
 
-# Create symlink
-log_step "Creating symlink in /usr/local/bin"
-if [[ -L "$BIN_LINK" ]]; then
+# Create/update symlink
+log_step "Creating symlink: $BIN_LINK -> $SCRIPT_DIR/infrastack.sh"
+if [[ -L "$BIN_LINK" ]] || [[ -e "$BIN_LINK" ]]; then
     rm -f "$BIN_LINK"
 fi
-ln -s "$INSTALL_DIR/infrastack.sh" "$BIN_LINK"
+ln -s "$SCRIPT_DIR/infrastack.sh" "$BIN_LINK"
 
 # Create config directory (optional)
 if [[ ! -d "/etc/infrastack" ]]; then
     log_step "Creating configuration directory"
     mkdir -p /etc/infrastack
 
-    if [[ -f "$INSTALL_DIR/configs/infrastack.conf.example" ]]; then
-        cp "$INSTALL_DIR/configs/infrastack.conf.example" /etc/infrastack/infrastack.conf.example
+    if [[ -f "$SCRIPT_DIR/configs/infrastack.conf.example" ]]; then
+        cp "$SCRIPT_DIR/configs/infrastack.conf.example" /etc/infrastack/infrastack.conf.example
     fi
 fi
 
@@ -89,10 +74,17 @@ echo ""
 log_success "InfraStack installed successfully!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+echo "Installation:"
+echo "  Source:   $SCRIPT_DIR"
+echo "  Command:  $BIN_LINK"
+echo ""
 echo "Next steps:"
 echo "  1. Run: infrastack --help"
 echo "  2. Configure: /etc/infrastack/infrastack.conf"
 echo "  3. Example: infrastack setup base"
 echo ""
-log_info "Documentation: $INSTALL_DIR/docs/"
+echo "To update InfraStack:"
+echo "  cd $SCRIPT_DIR && git pull"
+echo ""
+log_info "Documentation: $SCRIPT_DIR/docs/"
 echo ""

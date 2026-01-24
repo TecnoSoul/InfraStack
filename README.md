@@ -4,7 +4,7 @@
 
 InfraStack is a collection of battle-tested scripts and tools for managing Debian-based servers, Proxmox hosts, and Virtualmin hosting environments. Born from real-world sysadmin experience, it provides a unified CLI for common infrastructure management tasks.
 
-Sister project to [RadioStack](https://github.com/TecnoSoul/RadioStack) - Radio Platform Deployment System.
+**Now includes the Radio Module** (formerly [RadioStack](https://github.com/TecnoSoul/RadioStack)) - deploy and manage radio streaming platforms on Proxmox VE.
 
 ---
 
@@ -25,6 +25,13 @@ Sister project to [RadioStack](https://github.com/TecnoSoul/RadioStack) - Radio 
   - Disk usage monitoring
   - Memory and load average tracking
   - Service status verification
+
+### Radio Platform Deployment (NEW)
+- **AzuraCast & LibreTime**: Automated deployment on Proxmox VE
+  - LXC container creation with optimal settings
+  - ZFS dataset management for media storage
+  - Docker-based platform installation
+  - Inventory tracking and bulk operations
 
 ---
 
@@ -133,6 +140,33 @@ Exit codes:
 - `1` - Warnings (some issues detected)
 - `2` - Critical (serious issues)
 
+#### Radio Platform Deployment (Proxmox VE)
+
+```bash
+# Deploy AzuraCast station
+infrastack radio deploy azuracast -i 340 -n my-station
+
+# Deploy LibreTime station
+infrastack radio deploy libretime -i 350 -n station1
+
+# Check status of all stations
+infrastack radio status
+
+# View logs
+infrastack radio logs --ctid 340 --follow
+
+# Backup station
+infrastack radio backup --ctid 340
+
+# Update platform
+infrastack radio update --ctid 340
+
+# Remove station
+infrastack radio remove --ctid 340
+```
+
+See [Radio Module Documentation](docs/radio/getting-started.md) for full details.
+
 ### SSL Certificate Management
 
 - **Proxmox SSL Sync**: Automatically sync wildcard certificates to Proxmox hosts
@@ -198,17 +232,29 @@ Detailed documentation is available in the `docs/` directory:
 - [Setup Tools](docs/tools/setup.md)
 - [Xdebug Management](docs/tools/xdebug.md)
 
+### Radio Module Documentation
+
+- [Radio Getting Started](docs/radio/getting-started.md)
+- [LibreTime Guide](docs/radio/libretime.md)
+- [Storage Configuration](docs/radio/storage-configuration.md)
+- [Quick Reference](docs/radio/quick-reference.md)
+- [Migration from RadioStack](MIGRATION.md)
+
 ---
 
 ## Project Structure
 
 ```
 infrastack/
-├── infrastack.sh              # Main CLI entry point
+├── infrastack.sh              # Main CLI entry point (v2.0.0)
 ├── install.sh                 # Installation script
+├── MIGRATION.md               # RadioStack migration guide
 ├── scripts/
 │   ├── lib/
-│   │   └── common.sh          # Shared library functions
+│   │   ├── common.sh          # Shared library functions
+│   │   ├── container.sh       # LXC container management
+│   │   ├── storage.sh         # ZFS storage operations
+│   │   └── inventory.sh       # Station inventory tracking
 │   ├── setup/
 │   │   ├── base-packages.sh   # Base packages installer
 │   │   └── zsh-setup.sh       # Zsh configuration
@@ -216,13 +262,32 @@ infrastack/
 │   │   ├── xdebug-check.sh    # Xdebug status checker
 │   │   ├── xdebug-profile.sh  # Profiler toggle
 │   │   └── xdebug-audit.sh    # Configuration auditor
-│   └── monitoring/
-│       └── health-check.sh    # Server health check
+│   ├── monitoring/
+│   │   └── health-check.sh    # Server health check
+│   └── radio/                 # Radio module (formerly RadioStack)
+│       ├── platforms/
+│       │   ├── azuracast.sh   # AzuraCast deployment
+│       │   ├── libretime.sh   # LibreTime deployment
+│       │   └── deploy.sh      # Platform dispatcher
+│       └── tools/
+│           ├── status.sh      # Station status
+│           ├── update.sh      # Platform updates
+│           ├── backup.sh      # Backup operations
+│           ├── logs.sh        # Log viewer
+│           ├── info.sh        # Station info
+│           └── remove.sh      # Station removal
 ├── configs/
 │   └── infrastack.conf.example
-└── docs/
-    ├── getting-started.md
-    └── tools/
+├── docs/
+│   ├── getting-started.md
+│   ├── tools/
+│   └── radio/                 # Radio module docs
+│       ├── getting-started.md
+│       ├── libretime.md
+│       ├── storage-configuration.md
+│       └── quick-reference.md
+└── tests/
+    └── test-radio-module.sh   # Integration tests
 ```
 
 ---
@@ -251,7 +316,7 @@ Senior Linux Sysadmin
 
 ## Related Projects
 
-- **[RadioStack](https://github.com/TecnoSoul/RadioStack)** - Unified Radio Platform Deployment System for Proxmox VE
+- **RadioStack** - Now integrated as the InfraStack Radio Module. See [MIGRATION.md](MIGRATION.md) for migration guide.
 
 ---
 
