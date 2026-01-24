@@ -1,2 +1,3 @@
 *.conf
 !*.conf.example
+.claude/settings.local.json
