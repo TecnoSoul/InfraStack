@@ -1,9 +1,21 @@
 #!/bin/bash
+#=============================================================================
 # InfraStack - Common Library
 # Part of InfraStack sysadmin infrastructure toolkit
 # https://github.com/TecnoSoul/InfraStack
 #
-# This library provides: Logging, validation, and error handling for system administration tasks
+# This library provides:
+#   - Logging functions with color-coded output
+#   - Error handling and trap management
+#   - Validation functions for system, Proxmox, and network
+#   - Configuration management utilities
+#   - General utility functions
+#
+# History:
+#   - Originally from InfraStack (general sysadmin utilities)
+#   - Enhanced with RadioStack functions (container/Proxmox utilities)
+#   - Merged during RadioStack integration (2025)
+#=============================================================================
 
 set -euo pipefail
 
@@ -100,7 +112,7 @@ trap_error() {
 }
 
 #=============================================================================
-# VALIDATION FUNCTIONS
+# VALIDATION FUNCTIONS - General System
 #=============================================================================
 
 # Function: check_root
@@ -139,6 +151,128 @@ check_debian() {
         return 1
     fi
     return 0
+}
+
+#=============================================================================
+# VALIDATION FUNCTIONS - Proxmox/Container (from RadioStack)
+#=============================================================================
+
+# Function: check_proxmox_version
+# Purpose: Verify Proxmox VE is installed and get version
+# Parameters: None
+# Returns: 0 if Proxmox is installed, 1 if not
+# Example: check_proxmox_version || die "Not running on Proxmox VE"
+check_proxmox_version() {
+    if [[ ! -f /etc/pve/.version ]]; then
+        log_error "Proxmox VE not detected"
+        return 1
+    fi
+
+    local pve_version
+    pve_version=$(pveversion | cut -d'/' -f2 | cut -d'-' -f1)
+    log_info "Detected Proxmox VE version: $pve_version"
+    return 0
+}
+
+# Function: validate_ctid
+# Purpose: Validate container ID format and availability
+# Parameters:
+#   $1 - Container ID to validate
+# Returns: 0 if valid and available, 1 if invalid or in use
+# Example: validate_ctid "340" || die "Invalid container ID"
+validate_ctid() {
+    local ctid=$1
+
+    # Check if CTID is a number
+    if ! [[ "$ctid" =~ ^[0-9]+$ ]]; then
+        log_error "Container ID must be numeric: $ctid"
+        return 1
+    fi
+
+    # Check if CTID is in valid range (100-999999)
+    if [[ $ctid -lt 100 ]] || [[ $ctid -gt 999999 ]]; then
+        log_error "Container ID must be between 100 and 999999"
+        return 1
+    fi
+
+    # Check if container already exists
+    if pct status "$ctid" &>/dev/null; then
+        log_error "Container $ctid already exists"
+        return 1
+    fi
+
+    return 0
+}
+
+# Function: validate_ip
+# Purpose: Validate IPv4 address format
+# Parameters:
+#   $1 - IP address to validate
+# Returns: 0 if valid, 1 if invalid
+# Example: validate_ip "192.168.1.10" || die "Invalid IP address"
+validate_ip() {
+    local ip=$1
+    local valid_ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+
+    if [[ ! $ip =~ $valid_ip_regex ]]; then
+        log_error "Invalid IP address format: $ip"
+        return 1
+    fi
+
+    # Check each octet is between 0-255
+    local IFS='.'
+    read -ra octets <<< "$ip"
+    for octet in "${octets[@]}"; do
+        if [[ $octet -gt 255 ]]; then
+            log_error "Invalid IP address (octet > 255): $ip"
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+#=============================================================================
+# CONFIGURATION MANAGEMENT (from RadioStack)
+#=============================================================================
+
+# Default configuration file location
+INFRASTACK_CONF="${INFRASTACK_CONF:-/etc/infrastack/infrastack.conf}"
+
+# Function: load_config
+# Purpose: Load InfraStack configuration file
+# Parameters:
+#   $1 - Config file path (optional, uses default if not provided)
+# Returns: 0 on success, 1 if file doesn't exist (non-fatal)
+# Example: load_config "/etc/infrastack/infrastack.conf"
+load_config() {
+    local config_file=${1:-$INFRASTACK_CONF}
+
+    if [[ -f "$config_file" ]]; then
+        log_info "Loading configuration from $config_file"
+        # shellcheck disable=SC1090
+        source "$config_file"
+        return 0
+    else
+        log_warn "Configuration file not found: $config_file (using defaults)"
+        return 1
+    fi
+}
+
+# Function: get_config_value
+# Purpose: Get specific configuration value with fallback default
+# Parameters:
+#   $1 - Variable name to get
+#   $2 - Default value if not set
+# Returns: Echoes the value (either from config or default)
+# Example: CORES=$(get_config_value "DEFAULT_AZURACAST_CORES" "6")
+get_config_value() {
+    local var_name=$1
+    local default_value=$2
+
+    # Use indirect expansion to get variable value
+    local value="${!var_name:-$default_value}"
+    echo "$value"
 }
 
 #=============================================================================
@@ -189,8 +323,43 @@ detect_php_versions() {
     echo "${versions[@]}"
 }
 
-# Export all functions
+# Function: wait_with_progress
+# Purpose: Wait for specified seconds with progress indicator
+# Parameters:
+#   $1 - Seconds to wait
+#   $2 - Message to display (optional)
+# Returns: 0 when complete
+# Example: wait_with_progress 30 "Waiting for service to start"
+wait_with_progress() {
+    local seconds=$1
+    local message=${2:-"Waiting"}
+
+    log_info "$message ($seconds seconds)..."
+    for ((i=seconds; i>0; i--)); do
+        echo -ne "\rTime remaining: ${i}s  "
+        sleep 1
+    done
+    echo -e "\n"
+}
+
+#=============================================================================
+# EXPORT ALL FUNCTIONS
+#=============================================================================
+
+# Logging
 export -f log_info log_warn log_error log_step log_success
+
+# Error handling
 export -f die trap_error
+
+# Validation - General
 export -f check_root check_command check_debian
-export -f confirm_action detect_php_versions
+
+# Validation - Proxmox/Container
+export -f check_proxmox_version validate_ctid validate_ip
+
+# Configuration
+export -f load_config get_config_value
+
+# Utilities
+export -f confirm_action detect_php_versions wait_with_progress
