@@ -359,7 +359,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - \"127.0.0.1:8080:80\"
+      - \"8080:80\"
     environment:
       # Database
       MYSQL_HOST: db
@@ -514,7 +514,7 @@ What Gets Deployed:
 
 Network:
     • Internal IP: 192.168.2.<ctid>
-    • Nextcloud port 8080 bound to 127.0.0.1 only (proxy via NPM)
+    • Nextcloud port 8080 accessible from LAN (proxy via NPM)
     • Public access via NPM CT200 → https://${NC_DOMAIN}
 
 EOF
