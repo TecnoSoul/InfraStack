@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 
 #=============================================================================
 # CONFIGURATION DEFAULTS
@@ -67,6 +68,26 @@ create_zfs_dataset() {
     chown -R 165534:165534 "${VW_DATA_PATH}"
 
     log_success "ZFS dataset ready at ${VW_DATA_PATH}"
+}
+
+#=============================================================================
+# INFRASTACK INSTALLATION
+#=============================================================================
+
+install_infrastack() {
+    local ctid=$1
+
+    pct exec "$ctid" -- bash -c '
+        apt-get install -y git
+        cd /root
+        if [[ -d InfraStack ]]; then
+            cd InfraStack && git pull
+        else
+            git clone https://github.com/TecnoSoul/InfraStack.git
+            cd InfraStack
+        fi
+        ./install.sh
+    '
 }
 
 #=============================================================================
