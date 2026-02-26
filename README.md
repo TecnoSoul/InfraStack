@@ -26,12 +26,19 @@ InfraStack is a collection of battle-tested scripts and tools for managing Debia
   - Memory and load average tracking
   - Service status verification
 
-### Radio Platform Deployment (NEW)
+### Radio Platform Deployment
 - **AzuraCast & LibreTime**: Automated deployment on Proxmox VE
   - LXC container creation with optimal settings
   - ZFS dataset management for media storage
   - Docker-based platform installation
   - Inventory tracking and bulk operations
+
+### Nextcloud Deployment (NEW)
+- **Self-hosted cloud storage**: Automated deployment on Proxmox VE
+  - Unprivileged LXC container with Docker nesting
+  - ZFS dataset on hdd-pool for user data
+  - Stack: Nextcloud (apache) + MariaDB + Redis + Cron
+  - SSL/proxy via NPM (CT200)
 
 ---
 
@@ -167,6 +174,18 @@ infrastack radio remove --ctid 340
 
 See [Radio Module Documentation](docs/radio/getting-started.md) for full details.
 
+#### Nextcloud Deployment (Proxmox VE)
+
+```bash
+# Deploy Nextcloud (CT210 by default)
+./scripts/containers/nextcloud.sh -i 210 -n nube
+
+# Custom resources
+./scripts/containers/nextcloud.sh -i 210 -n nube -c 6 -m 8192
+```
+
+See [Nextcloud Documentation](docs/nextcloud/deploy-guide.md) for full details.
+
 ### SSL Certificate Management
 
 - **Proxmox SSL Sync**: Automatically sync wildcard certificates to Proxmox hosts
@@ -240,6 +259,11 @@ Detailed documentation is available in the `docs/` directory:
 - [Quick Reference](docs/radio/quick-reference.md)
 - [Migration from RadioStack](MIGRATION.md)
 
+### Nextcloud Documentation
+
+- [Nextcloud Deploy Guide](docs/nextcloud/deploy-guide.md)
+- [Docker Compose Reference](docs/nextcloud/docker-compose.yml)
+
 ---
 
 ## Project Structure
@@ -264,6 +288,8 @@ infrastack/
 │   │   └── xdebug-audit.sh    # Configuration auditor
 │   ├── monitoring/
 │   │   └── health-check.sh    # Server health check
+│   ├── containers/
+│   │   └── nextcloud.sh       # Nextcloud full-stack deployment
 │   └── radio/                 # Radio module (formerly RadioStack)
 │       ├── platforms/
 │       │   ├── azuracast.sh   # AzuraCast deployment
@@ -281,6 +307,9 @@ infrastack/
 ├── docs/
 │   ├── getting-started.md
 │   ├── tools/
+│   ├── nextcloud/             # Nextcloud module docs
+│   │   ├── deploy-guide.md
+│   │   └── docker-compose.yml
 │   └── radio/                 # Radio module docs
 │       ├── getting-started.md
 │       ├── libretime.md
