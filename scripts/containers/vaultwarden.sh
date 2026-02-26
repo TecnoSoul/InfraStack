@@ -278,7 +278,7 @@ services:
     container_name: vaultwarden
     restart: unless-stopped
     ports:
-      - \"127.0.0.1:${VW_PORT}:80\"
+      - \"${VW_PORT}:80\"
     environment:
       # Domain (required for WebAuthn, attachments, etc.)
       DOMAIN: https://${VW_DOMAIN}
