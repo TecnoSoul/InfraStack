@@ -22,6 +22,7 @@ INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Source common library
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 
 #=============================================================================
 # CONFIGURATION DEFAULTS
@@ -83,6 +84,26 @@ create_zfs_dataset() {
     chown -R 100999:100999 "${NC_DATA_PATH}/redis"
 
     log_success "ZFS dataset ready at ${NC_DATA_PATH}"
+}
+
+#=============================================================================
+# INFRASTACK INSTALL (inside container)
+#=============================================================================
+
+install_infrastack() {
+    local ctid=$1
+
+    pct exec "$ctid" -- bash -c '
+        apt-get install -y git
+        cd /root
+        if [[ -d InfraStack ]]; then
+            cd InfraStack && git pull
+        else
+            git clone https://github.com/TecnoSoul/InfraStack.git
+            cd InfraStack
+        fi
+        ./install.sh
+    '
 }
 
 #=============================================================================
