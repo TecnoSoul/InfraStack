@@ -177,9 +177,9 @@ sudo infrastack radio deploy azuracast \
 ### Default Resources
 
 **AzuraCast:**
-- CPU: 6 cores
-- Memory: 12GB
-- Storage: 500GB
+- CPU: 4 cores
+- Memory: 4GB
+- Storage: 50GB (HDD quota)
 
 **LibreTime:**
 - CPU: 4 cores
