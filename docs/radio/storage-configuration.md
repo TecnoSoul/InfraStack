@@ -29,7 +29,7 @@ When you deploy a radio platform using InfraStack, the following happens:
 3. **Configure Platform**
    - The platform's default `docker-compose.yml` uses Docker volumes
    - InfraStack automatically modifies it to use the mounted HDD path
-   - Station data goes to the mounted path (on HDD) instead of Docker volume (on NVMe)
+   - Station data (`station_data`) and web UI backups (`backups`) are both remapped to the mounted path (on HDD) instead of Docker volumes (on NVMe)
 
 ## Verifying Storage Configuration
 
@@ -43,6 +43,9 @@ pct exec CTID -- df -h /var/azuracast
 
 # Check docker-compose.yml configuration (should show /var/azuracast/stations)
 pct exec CTID -- grep stations /var/azuracast/docker-compose.yml
+
+# Check backups volume is remapped to HDD (should show /var/azuracast/backups)
+pct exec CTID -- grep backups /var/azuracast/docker-compose.yml
 ```
 
 ### Expected Output
@@ -55,12 +58,18 @@ hdd-pool/container-data/azuracast-media/estudiorecords2  300G  2.5G  298G   1% /
 
 $ pct exec 232 -- grep stations /var/azuracast/docker-compose.yml
 - '/var/azuracast/stations:/var/azuracast/stations:rw'
+
+$ pct exec 232 -- grep backups /var/azuracast/docker-compose.yml
+- '/var/azuracast/backups:/var/azuracast/backups'
 ```
 
 **Incorrect configuration** (using Docker volume):
 ```bash
 $ pct exec 232 -- grep stations /var/azuracast/docker-compose.yml
 - 'station_data:/var/azuracast/stations'
+
+$ pct exec 232 -- grep backups /var/azuracast/docker-compose.yml
+- 'backups:/var/azuracast/backups'
 ```
 
 ### Detailed Verification
@@ -112,6 +121,36 @@ Contact support or manually migrate data (see Manual Storage Configuration below
 pct exec CTID -- chown -R 1000:1000 /var/azuracast/stations
 pct exec CTID -- chmod -R 755 /var/azuracast/stations
 ```
+
+### Issue: Web UI Backup Fails with Disk quota exceeded
+
+**Symptoms:**
+- Triggering a backup from the AzuraCast web interface fails mid-backup
+- Error in logs: `zip I/O error: Disk quota exceeded`
+- The root filesystem (`/`) fills up on the container's NVMe disk
+
+**Cause:**
+The `backups` Docker volume was not remapped to the HDD mount. AzuraCast writes web UI backups to `/var/lib/docker/volumes/azuracast_backups/_data/` on the NVMe root disk (32G), which quickly hits its limit.
+
+**Manual fix for existing deployments:**
+```bash
+# Stop services
+pct exec CTID -- bash -c "cd /var/azuracast && docker compose down"
+
+# Create backups directory on HDD
+pct exec CTID -- mkdir -p /var/azuracast/backups
+pct exec CTID -- chown -R 1000:1000 /var/azuracast/backups
+
+# Remap backups volume in docker-compose.yml
+pct exec CTID -- sed -i 's|backups:/var/azuracast/backups|/var/azuracast/backups:/var/azuracast/backups|g' /var/azuracast/docker-compose.yml
+pct exec CTID -- sed -i '/^volumes:/,/^[^ ]/ { /backups: {  }/d }' /var/azuracast/docker-compose.yml
+
+# Remove orphaned Docker volume and restart
+pct exec CTID -- docker volume rm azuracast_backups 2>/dev/null || true
+pct exec CTID -- bash -c "cd /var/azuracast && docker compose up -d"
+```
+
+> **Note:** This is fixed automatically in the deploy script as of March 2026. New deployments are not affected.
 
 ### Issue: Storage Quota Exceeded
 
