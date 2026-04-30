@@ -251,6 +251,19 @@ install_azuracast() {
         # This cleans up the volume created during initial installation
         docker volume rm azuracast_station_data 2>/dev/null || true
 
+        # Remap backups volume to HDD path
+        # Without this, web UI backups write to Docker volume on NVMe and hit quota errors
+        mkdir -p '$install_path/backups'
+        chown -R 1000:1000 '$install_path/backups'
+
+        sed -i 's|backups:/var/azuracast/backups|$install_path/backups:/var/azuracast/backups|g' docker-compose.yml
+
+        sed -i '/^volumes:/,/^[^ ]/ {
+            /backups: {  }/d
+        }' docker-compose.yml
+
+        docker volume rm azuracast_backups 2>/dev/null || true
+
         # Restart services with new configuration
         docker compose up -d
     "; then
