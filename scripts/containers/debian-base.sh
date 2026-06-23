@@ -42,6 +42,7 @@ DEFAULT_BRIDGE="vmbr1"
 #   $4 - memory (optional)
 #   $5 - ip_suffix (optional)
 #   $6 - privileged (optional, 0=unprivileged, 1=privileged)
+#   $7 - custom_hostname (optional, overrides <name>.tecnosoul.com.ar)
 create_debian_base_container() {
     local ctid=$1
     local name=$2
@@ -49,8 +50,9 @@ create_debian_base_container() {
     local memory=${4:-$DEFAULT_MEMORY}
     local ip_suffix=${5:-$ctid}
     local privileged=${6:-0}
+    local custom_hostname=${7:-""}
 
-    local hostname="${name}.tecnosoul.com.ar"
+    local hostname="${custom_hostname:-${name}.tecnosoul.com.ar}"
     local ip_address="${DEFAULT_NETWORK}.${ip_suffix}"
     local swap=$((memory / 2))
     local unprivileged=1
@@ -247,6 +249,7 @@ Options:
     -c, --cores NUM         CPU cores (default: $DEFAULT_CORES)
     -m, --memory MB         Memory in MB (default: $DEFAULT_MEMORY)
     -p, --ip-suffix NUM     Last octet of IP (default: same as CTID)
+    --hostname FQDN         Custom hostname (default: <name>.tecnosoul.com.ar)
     --privileged            Create privileged container (default: unprivileged)
     -h, --help              Show this help message
 
@@ -256,6 +259,9 @@ Examples:
 
     # Custom resources
     $0 -i 101 -n monitoring -c 4 -m 4096
+
+    # Custom hostname (e.g. for external-domain containers)
+    $0 -i 140 -n novacast --hostname cast.novamusic.online -c 2 -m 2048 -p 140
 
     # Privileged container (for Virtualmin)
     $0 -i 103 -n hosting3 -c 4 -m 4096 --privileged
@@ -283,6 +289,7 @@ main() {
     MEMORY=$DEFAULT_MEMORY
     IP_SUFFIX=""
     PRIVILEGED=0
+    CUSTOM_HOSTNAME=""
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -291,6 +298,7 @@ main() {
             -c|--cores) CORES="$2"; shift 2 ;;
             -m|--memory) MEMORY="$2"; shift 2 ;;
             -p|--ip-suffix) IP_SUFFIX="$2"; shift 2 ;;
+            --hostname) CUSTOM_HOSTNAME="$2"; shift 2 ;;
             --privileged) PRIVILEGED=1; shift ;;
             -h|--help) show_help ;;
             *) log_error "Unknown option: $1"; show_help ;;
@@ -307,7 +315,7 @@ main() {
     check_root
 
     # Create container
-    create_debian_base_container "$CTID" "$NAME" "$CORES" "$MEMORY" "$IP_SUFFIX" "$PRIVILEGED"
+    create_debian_base_container "$CTID" "$NAME" "$CORES" "$MEMORY" "$IP_SUFFIX" "$PRIVILEGED" "$CUSTOM_HOSTNAME"
 }
 
 # Run main if executed directly
