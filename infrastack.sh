@@ -72,6 +72,12 @@ Categories & Commands:
   health                        Server monitoring
     check                       Run server health check
 
+  containers                    Container deployment
+    debian-base                 Debian base container with InfraStack pre-installed
+    node-webapp                 Node.js + PM2 + DB (MariaDB/PostgreSQL) container
+    nextcloud                   Nextcloud + MariaDB + Redis on Docker
+    vaultwarden                 Vaultwarden (Bitwarden-compatible) on Docker
+
   radio                         Radio platform deployment (formerly RadioStack)
     deploy <platform>           Deploy radio platform (azuracast/libretime)
     status                      Check status of radio stations
@@ -249,6 +255,23 @@ main() {
                 exit 1
             fi
             ;;
+            
+        containers)
+            if [[ $# -eq 0 ]]; then
+                log_error "Missing containers command"
+                echo "Usage: infrastack containers <debian-base|node-webapp|nextcloud|vaultwarden>"
+                exit 1
+            fi
+            local sub="$1"; shift
+            case "$sub" in
+                debian-base)  bash "$INFRASTACK_ROOT/scripts/containers/debian-base.sh"  "$@" ;;
+                node-webapp)  bash "$INFRASTACK_ROOT/scripts/containers/node-webapp.sh"  "$@" ;;
+                nextcloud)    bash "$INFRASTACK_ROOT/scripts/containers/nextcloud.sh"     "$@" ;;
+                vaultwarden)  bash "$INFRASTACK_ROOT/scripts/containers/vaultwarden.sh"  "$@" ;;
+                *)  log_error "Unknown container type: $sub"; exit 1 ;;
+            esac
+            ;;
+
 
         radio)
             # Radio module (formerly RadioStack)
@@ -311,7 +334,7 @@ main() {
         *)
             log_error "Unknown category: $category"
             echo ""
-            echo "Available categories: setup, php, health, radio"
+            echo "Available categories: setup, php, health, containers, radio"
             echo "Run 'infrastack help' for more information"
             exit 1
             ;;
