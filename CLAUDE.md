@@ -54,9 +54,35 @@ Mirrors the structure of the old RadioStack project. `platforms/deploy.sh` dispa
 | Script | Purpose |
 |--------|---------|
 | `debian-base.sh` | Crea un CT Debian genérico con InfraStack, base packages y Zsh preinstalados. Punto de partida para cualquier servicio que no tenga su propio script. |
+| `node-webapp.sh` | Node.js (nvm) + PM2 nativo + DB en Docker (MariaDB o PostgreSQL) + nginx opcional para SPA. Stack genérico para backends/fullstack JS. |
 | `nextcloud.sh` | Nextcloud (apache) + MariaDB + Redis sobre Docker, con dataset ZFS en `hdd-pool`. |
 | `vaultwarden.sh` | Vaultwarden (Bitwarden-compatible) sobre Docker. |
 | `virtualmin-host.sh` | Contenedor Virtualmin para hosting compartido (requiere `--privileged`). |
+
+**`node-webapp.sh` flags:**
+```bash
+infrastack containers node-webapp \
+  -i <ctid>                    # ID del contenedor (requerido)
+  -n <name>                    # Nombre de la app (requerido); usado para hostname, paths y DB name
+  --hostname <fqdn>            # Hostname custom (default: <name>.tecnosoul.com.ar)
+  -c <cores>                   # CPU cores (default: 2)
+  -m <memory_mb>               # RAM en MB (default: 2048)
+  -p <ip_suffix>               # Último octeto de IP (default: igual al CTID)
+  --db-type mariadb|postgres   # Motor de base de datos (default: mariadb)
+  --db-name <name>             # Nombre de la DB (default: igual a --name)
+  --node-version <num>         # Versión LTS de Node.js (default: 22)
+  --app-port <port>            # Puerto donde corre PM2 (default: 3000)
+  --no-nginx                   # Omite nginx (para backends API-only)
+```
+
+Qué instala: Debian 13 LXC (unprivileged, nesting=1) · InfraStack + Zsh · Docker CE + Compose · nvm + Node LTS · PM2 con systemd startup · nginx con config SPA (opcional) · `docker-compose.yml` para la DB · `/opt/<name>/{app,docker,public,logs}`.
+
+Ejemplo producción:
+```bash
+infrastack containers node-webapp -i 150 -n swisshub-prod \
+  --hostname hub.swiss-net.com.ar \
+  --db-type mariadb --db-name swissnet_hub --app-port 4001
+```
 
 **`debian-base.sh` flags:**
 ```bash
