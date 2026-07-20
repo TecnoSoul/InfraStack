@@ -49,6 +49,32 @@ All library functions are exported (`export -f`) so they're available to subproc
 
 Mirrors the structure of the old RadioStack project. `platforms/deploy.sh` dispatches to `azuracast.sh` or `libretime.sh`. Tools in `scripts/radio/tools/` (status, update, backup, logs, info, remove) each source the lib files independently via `$INFRASTACK_ROOT`.
 
+### Container scripts (`scripts/containers/`)
+
+| Script | Purpose |
+|--------|---------|
+| `debian-base.sh` | Crea un CT Debian genérico con InfraStack, base packages y Zsh preinstalados. Punto de partida para cualquier servicio que no tenga su propio script. |
+| `nextcloud.sh` | Nextcloud (apache) + MariaDB + Redis sobre Docker, con dataset ZFS en `hdd-pool`. |
+| `vaultwarden.sh` | Vaultwarden (Bitwarden-compatible) sobre Docker. |
+| `virtualmin-host.sh` | Contenedor Virtualmin para hosting compartido (requiere `--privileged`). |
+
+**`debian-base.sh` flags:**
+```bash
+./scripts/containers/debian-base.sh \
+  -i <ctid>            # ID del contenedor (requerido)
+  -n <name>            # Nombre base (requerido); hostname por defecto: <name>.tecnosoul.com.ar
+  --hostname <fqdn>    # Sobreescribe el hostname (útil para dominios externos)
+  -c <cores>           # CPU cores (default: 2)
+  -m <memory_mb>       # RAM en MB (default: 2048)
+  -p <ip_suffix>       # Último octeto de IP (default: igual al CTID)
+  --privileged         # Contenedor privilegiado (default: unprivileged)
+```
+
+Ejemplo con hostname externo:
+```bash
+./scripts/containers/debian-base.sh -i 140 -n novacast --hostname cast.novamusic.online -c 2 -m 2048 -p 140
+```
+
 ### Container deployment pattern
 
 New container scripts (e.g., `scripts/containers/nextcloud.sh`) follow this sequence:
