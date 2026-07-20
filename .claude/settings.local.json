@@ -5,7 +5,9 @@
       "Bash(tree:*)",
       "Bash(./tests/test-radio-module.sh:*)",
       "Bash(bash:*)",
-      "Bash(./infrastack.sh:*)"
+      "Bash(./infrastack.sh:*)",
+      "Bash(git -C /mnt/datos1/00-TecnoSoul/00-Servers/InfraStack log --oneline -5)",
+      "Bash(git -C /mnt/datos1/00-TecnoSoul/00-Servers/InfraStack add scripts/containers/debian-base.sh CLAUDE.md)"
     ]
   }
 }
