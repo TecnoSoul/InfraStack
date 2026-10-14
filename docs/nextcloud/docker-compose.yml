@@ -3,7 +3,8 @@
 # TecnoSoul - nube.tecnosoul.com.ar
 #
 # Container: CT210 | IP: 192.168.2.210
-# Data:      /mnt/nextcloud-data → hdd-pool/container-data/nextcloud (ZFS)
+# Data:      /mnt/nextcloud-data → hdd-pool/container-data/nextcloud (ZFS: data + config)
+# DB/Redis:  volúmenes Docker en el NVMe (root disk del CT)
 # Access:    https://nube.tecnosoul.com.ar (via NPM CT200)
 #
 # Deploy:    cd /opt/nextcloud && docker compose up -d
@@ -25,7 +26,7 @@ services:
       MYSQL_USER: nextcloud
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - /mnt/nextcloud-data/db:/var/lib/mysql
+      - nextcloud-db:/var/lib/mysql
     networks:
       - nextcloud-net
     healthcheck:
@@ -42,7 +43,7 @@ services:
     restart: unless-stopped
     command: redis-server --save 60 1 --loglevel warning
     volumes:
-      - /mnt/nextcloud-data/redis:/data
+      - nextcloud-redis:/data
     networks:
       - nextcloud-net
     healthcheck:
@@ -78,6 +79,7 @@ services:
       OVERWRITEPROTOCOL: https
       OVERWRITECLIURL: https://nube.tecnosoul.com.ar
       OVERWRITEHOST: nube.tecnosoul.com.ar
+      TRUSTED_PROXIES: 192.168.2.200
       # Redis
       REDIS_HOST: redis
       REDIS_HOST_PORT: 6379
@@ -115,6 +117,10 @@ services:
 # =============================================================================
 volumes:
   nextcloud-html:
+    driver: local
+  nextcloud-db:
+    driver: local
+  nextcloud-redis:
     driver: local
 
 networks:

@@ -38,7 +38,7 @@ All container scripts create an unprivileged Debian LXC (unless noted) on `vmbr1
 
 - **debian-base**: Generic Debian container — starting point for any service without its own script. Supports `--hostname` for external FQDNs and `--privileged`.
 - **node-webapp**: Node.js (nvm) + PM2 (systemd) + MariaDB/PostgreSQL in Docker + optional nginx for SPA frontends.
-- **nextcloud**: Nextcloud (apache) + MariaDB + Redis + Cron on Docker, data on a ZFS dataset in `hdd-pool`.
+- **nextcloud**: Nextcloud (apache) + MariaDB + Redis + Cron on Docker; user files and config on a ZFS dataset in `hdd-pool`, MariaDB/Redis on NVMe Docker volumes.
 - **vaultwarden**: Vaultwarden (Bitwarden-compatible) on Docker, data on `hdd-pool`.
 - **virtualmin-host**: Virtualmin shared-hosting container (direct script only, not yet wired into the CLI).
 
@@ -206,7 +206,7 @@ Common options for every container script: `-i <ctid>` (required), `-n <name>` (
 |--------|------------------------------|-------------|
 | `debian-base` | 2 / 2048 MB / 16 GB | `--hostname`, `--privileged` |
 | `node-webapp` | 2 / 2048 MB / 20 GB | `--hostname`, `--db-type mariadb\|postgres`, `--db-name`, `--node-version` (22), `--app-port` (3000), `--no-nginx` |
-| `nextcloud` | 4 / 4096 MB / 20 GB | — |
+| `nextcloud` | 4 / 4096 MB / 32 GB | `--domain`, `--dataset`, `--trusted-proxy` |
 | `vaultwarden` | 2 / 512 MB / 8 GB | — |
 | `virtualmin-host` | 4 / 4096 MB / 32 GB | — |
 

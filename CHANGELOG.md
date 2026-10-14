@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `nextcloud.sh`: `--domain`, `--dataset` and `--trusted-proxy` flags, allowing isolated test instances with their own dataset and domain.
+- `nextcloud.sh`: sets `TRUSTED_PROXIES` (default `192.168.2.200`, the NPM proxy) so Nextcloud sees real client IPs and brute-force throttling does not lock out the proxy.
+- `nextcloud.sh`: summary now lists the NPM Advanced-tab settings for large uploads (`client_max_body_size 0`, `proxy_request_buffering off`, 3600 s timeouts).
+
+### Changed
+- `nextcloud.sh`: MariaDB and Redis now use Docker volumes on the NVMe root disk instead of the `hdd-pool` dataset; the HDD holds only user files and config. Existing deployments are unaffected; the change applies to new deployments.
+- `nextcloud.sh`: default root disk raised from 20 to 32 GB.
+
+### Fixed
+- `nextcloud.sh`: trusted domain uses the container's real IP instead of a hardcoded `192.168.2.210`.
+
 ## [2.1.0] - 2026-10-14
 
 ### Added
