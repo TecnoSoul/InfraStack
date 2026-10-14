@@ -33,12 +33,14 @@ InfraStack is a collection of battle-tested scripts and tools for managing Debia
   - Docker-based platform installation
   - Inventory tracking and bulk operations
 
-### Nextcloud Deployment (NEW)
-- **Self-hosted cloud storage**: Automated deployment on Proxmox VE
-  - Unprivileged LXC container with Docker nesting
-  - ZFS dataset on hdd-pool for user data
-  - Stack: Nextcloud (apache) + MariaDB + Redis + Cron
-  - SSL/proxy via NPM (CT200)
+### Container Deployment (Proxmox VE)
+All container scripts create an unprivileged Debian LXC (unless noted) on `vmbr1` (`192.168.2.0/24`), with InfraStack, base packages and Zsh preinstalled. Public SSL is handled by NPM (CT200).
+
+- **debian-base**: Generic Debian container — starting point for any service without its own script. Supports `--hostname` for external FQDNs and `--privileged`.
+- **node-webapp**: Node.js (nvm) + PM2 (systemd) + MariaDB/PostgreSQL in Docker + optional nginx for SPA frontends.
+- **nextcloud**: Nextcloud (apache) + MariaDB + Redis + Cron on Docker, data on a ZFS dataset in `hdd-pool`.
+- **vaultwarden**: Vaultwarden (Bitwarden-compatible) on Docker, data on `hdd-pool`.
+- **virtualmin-host**: Virtualmin shared-hosting container (direct script only, not yet wired into the CLI).
 
 ---
 
@@ -174,17 +176,52 @@ infrastack radio remove --ctid 340
 
 See [Radio Module Documentation](docs/radio/getting-started.md) for full details.
 
-#### Nextcloud Deployment (Proxmox VE)
+#### Container Deployment (Proxmox VE)
 
 ```bash
-# Deploy Nextcloud (CT210 by default)
-./scripts/containers/nextcloud.sh -i 210 -n nube
+# Generic Debian container
+infrastack containers debian-base -i 140 -n novacast --hostname cast.novamusic.online
 
-# Custom resources
-./scripts/containers/nextcloud.sh -i 210 -n nube -c 6 -m 8192
+# Node.js web app (Node + PM2 + DB in Docker + nginx)
+infrastack containers node-webapp -i 150 -n swisshub-prod \
+  --hostname hub.swiss-net.com.ar \
+  --db-type mariadb --db-name swissnet_hub --app-port 4001
+
+# API-only backend with PostgreSQL, no nginx
+infrastack containers node-webapp -i 152 -n myapi --db-type postgres --no-nginx --app-port 8080
+
+# Nextcloud
+infrastack containers nextcloud -i 210 -n nube -c 6 -m 8192
+
+# Vaultwarden
+infrastack containers vaultwarden -i 211 -n vault
+
+# Virtualmin hosting server (direct script)
+sudo ./scripts/containers/virtualmin-host.sh -i 103 -n hosting3 -c 4 -m 4096
 ```
 
-See [Nextcloud Documentation](docs/nextcloud/deploy-guide.md) for full details.
+Common options for every container script: `-i <ctid>` (required), `-n <name>` (required), `-c <cores>`, `-m <memory_mb>`, `-p <ip_suffix>` (defaults to the CTID). Run any script with `-h` for its full option list.
+
+| Script | Default cores / RAM / rootfs | Extra flags |
+|--------|------------------------------|-------------|
+| `debian-base` | 2 / 2048 MB / 16 GB | `--hostname`, `--privileged` |
+| `node-webapp` | 2 / 2048 MB / 20 GB | `--hostname`, `--db-type mariadb\|postgres`, `--db-name`, `--node-version` (22), `--app-port` (3000), `--no-nginx` |
+| `nextcloud` | 4 / 4096 MB / 20 GB | — |
+| `vaultwarden` | 2 / 512 MB / 8 GB | — |
+| `virtualmin-host` | 4 / 4096 MB / 32 GB | — |
+
+Credentials generated during deployment are saved on the Proxmox host to `/root/<service>-credentials-ct<ctid>.txt` (chmod 600).
+
+See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md) and [hosting3 (Virtualmin)](docs/hosting3-deployment-guide.md) guides for details.
+
+#### Network Configuration Generator
+
+```bash
+# Generate (but NOT apply) port-forwarding / NAT rules for review
+sudo ./scripts/network/generate-config.sh generate-forwarding --ctid 103 --type virtualmin
+```
+
+See the [Network Guide](docs/network-guide.md).
 
 ### SSL Certificate Management
 
@@ -250,6 +287,9 @@ Detailed documentation is available in the `docs/` directory:
 - [Getting Started](docs/getting-started.md)
 - [Setup Tools](docs/tools/setup.md)
 - [Xdebug Management](docs/tools/xdebug.md)
+- [SSL Management](docs/tools/ssl-management.md)
+- [Network Guide](docs/network-guide.md)
+- [Changelog](CHANGELOG.md)
 
 ### Radio Module Documentation
 
@@ -264,14 +304,20 @@ Detailed documentation is available in the `docs/` directory:
 - [Nextcloud Deploy Guide](docs/nextcloud/deploy-guide.md)
 - [Docker Compose Reference](docs/nextcloud/docker-compose.yml)
 
+### Other Container Guides
+
+- [Vaultwarden Deploy Guide](docs/vaultwarden/deploy-guide.md)
+- [hosting3 (Virtualmin) Deployment Guide](docs/hosting3-deployment-guide.md)
+
 ---
 
 ## Project Structure
 
 ```
 infrastack/
-├── infrastack.sh              # Main CLI entry point (v2.0.0)
+├── infrastack.sh              # Main CLI entry point (v2.1.0)
 ├── install.sh                 # Installation script
+├── CHANGELOG.md               # Version history
 ├── MIGRATION.md               # RadioStack migration guide
 ├── scripts/
 │   ├── lib/
@@ -289,7 +335,14 @@ infrastack/
 │   ├── monitoring/
 │   │   └── health-check.sh    # Server health check
 │   ├── containers/
-│   │   └── nextcloud.sh       # Nextcloud full-stack deployment
+│   │   ├── debian-base.sh     # Generic Debian container
+│   │   ├── node-webapp.sh     # Node.js + PM2 + DB stack
+│   │   ├── nextcloud.sh       # Nextcloud full-stack deployment
+│   │   ├── vaultwarden.sh     # Vaultwarden deployment
+│   │   └── virtualmin-host.sh # Virtualmin hosting server
+│   ├── network/
+│   │   └── generate-config.sh # Port-forwarding/NAT rule generator
+│   ├── ssl-management/        # Proxmox SSL certificate sync
 │   └── radio/                 # Radio module (formerly RadioStack)
 │       ├── platforms/
 │       │   ├── azuracast.sh   # AzuraCast deployment
@@ -306,17 +359,21 @@ infrastack/
 │   └── infrastack.conf.example
 ├── docs/
 │   ├── getting-started.md
-│   ├── tools/
+│   ├── network-guide.md
+│   ├── hosting3-deployment-guide.md
+│   ├── tools/                 # setup, xdebug, ssl-management
 │   ├── nextcloud/             # Nextcloud module docs
 │   │   ├── deploy-guide.md
 │   │   └── docker-compose.yml
+│   ├── vaultwarden/
+│   │   └── deploy-guide.md
 │   └── radio/                 # Radio module docs
 │       ├── getting-started.md
 │       ├── libretime.md
 │       ├── storage-configuration.md
 │       └── quick-reference.md
 └── tests/
-    └── test-radio-module.sh   # Integration tests
+    └── test-radio-module.sh   # Structure/syntax tests
 ```
 
 ---

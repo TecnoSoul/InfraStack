@@ -16,6 +16,9 @@ Target environments:
 # Syntax and structure validation (no Proxmox required)
 bash tests/test-radio-module.sh
 
+# Note: the test script currently aborts after its first PASS because
+# `((TESTS_PASSED++))` returns 1 under `set -e` when the counter is 0.
+
 # Syntax check a single script
 bash -n scripts/lib/common.sh
 bash -n scripts/radio/platforms/azuracast.sh
@@ -27,10 +30,11 @@ Tests validate file existence, executability, syntax (`bash -n`), and CLI output
 
 ### Entry point and dispatch
 
-`infrastack.sh` is the single CLI entry point. It resolves `INFRASTACK_ROOT` (works as a direct script or via `/usr/local/bin/infrastack` symlink), sources `scripts/lib/common.sh`, then routes by category (`setup`, `php`, `health`, `radio`) and sub-command.
+`infrastack.sh` is the single CLI entry point. It resolves `INFRASTACK_ROOT` (works as a direct script or via `/usr/local/bin/infrastack` symlink), sources `scripts/lib/common.sh`, then routes by category (`setup`, `php`, `health`, `containers`, `radio`) and sub-command.
 
 - **setup / php / health** commands are loaded with `source` (run in the same shell process)
-- **radio** commands are invoked with `bash` (run as subprocesses)
+- **containers / radio** commands are invoked with `bash` (run as subprocesses)
+- Not yet wired into the CLI (run directly): `scripts/containers/virtualmin-host.sh`, `scripts/network/generate-config.sh`, `scripts/ssl-management/*`
 
 ### Shared libraries (`scripts/lib/`)
 
@@ -126,3 +130,7 @@ New container scripts (e.g., `scripts/containers/nextcloud.sh`) follow this sequ
 ### Configuration
 
 Runtime config: `/etc/infrastack/infrastack.conf` (sourced by `infrastack.sh` at startup). Example at `configs/infrastack.conf.example`. Inventory file: `/etc/infrastack/inventory/stations.csv`.
+
+## Changelog
+
+Record user-visible changes in `CHANGELOG.md` under `[Unreleased]` (Keep a Changelog format: Added / Changed / Fixed / Removed). When releasing, bump `VERSION` in `infrastack.sh` and the header `History:` block, and update the version check in `tests/test-radio-module.sh`.
