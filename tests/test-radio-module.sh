@@ -191,7 +191,7 @@ test_main_cli() {
     assert_contains "$INFRASTACK_ROOT/infrastack.sh" "backup)" "CLI has backup command"
 
     log_test "Checking CLI version..."
-    assert_contains "$INFRASTACK_ROOT/infrastack.sh" 'VERSION="2.0.0"' "CLI version is 2.0.0"
+    assert_contains "$INFRASTACK_ROOT/infrastack.sh" 'VERSION="2.1.0"' "CLI version is 2.1.0"
 }
 
 test_documentation() {
@@ -242,8 +242,8 @@ test_cli_help() {
         log_fail "Radio help missing deploy command"
     fi
 
-    if "$INFRASTACK_ROOT/infrastack.sh" version 2>&1 | grep -q "2.0.0"; then
-        log_pass "CLI version shows 2.0.0"
+    if "$INFRASTACK_ROOT/infrastack.sh" version 2>&1 | grep -q "2.1.0"; then
+        log_pass "CLI version shows 2.1.0"
     else
         log_fail "CLI version incorrect"
     fi
