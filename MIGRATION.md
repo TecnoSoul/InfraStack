@@ -215,7 +215,7 @@ Ensure you're not loading the old config:
 ```bash
 # Check which config is loaded
 infrastack version
-# Should show: InfraStack v2.1.0
+# Should show: InfraStack v2.2.0
 
 # Verify config path
 echo $INFRASTACK_CONFIG

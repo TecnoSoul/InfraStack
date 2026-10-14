@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-14
+
 ### Added
 - `nextcloud.sh`: `--domain`, `--dataset` and `--trusted-proxy` flags, allowing isolated test instances with their own dataset and domain.
 - `nextcloud.sh`: sets `TRUSTED_PROXIES` (default `192.168.2.200`, the NPM proxy) so Nextcloud sees real client IPs and brute-force throttling does not lock out the proxy.
@@ -58,7 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `install.sh` (installs to `/opt/infrastack`, symlinks `/usr/local/bin/infrastack`).
 - Proxmox SSL certificate tools: `deploy-proxmox-ssl.sh` and the pull-based `rsync-certs-proxmox.sh` with a local config file.
 
-[Unreleased]: https://github.com/TecnoSoul/InfraStack/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/TecnoSoul/InfraStack/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/TecnoSoul/InfraStack/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/TecnoSoul/InfraStack/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/TecnoSoul/InfraStack/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/TecnoSoul/InfraStack/releases/tag/v1.0.0
