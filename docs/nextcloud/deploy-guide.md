@@ -22,9 +22,11 @@ CT210 - Nextcloud LXC (192.168.2.210)
 Storage (hdd-pool ZFS):
     hdd-pool/container-data/nextcloud/
     ├── data/    → /var/www/html/data   (archivos de usuarios)
-    ├── config/  → /var/www/html/config (config de NC)
-    ├── db/      → /var/lib/mysql       (base de datos)
-    └── redis/   → /data                (cache)
+    └── config/  → /var/www/html/config (config de NC)
+
+Storage (NVMe, disco raíz del CT, volúmenes Docker):
+    nextcloud-db    → /var/lib/mysql    (base de datos)
+    nextcloud-redis → /data             (cache)
 ```
 
 ---
@@ -39,6 +41,22 @@ cd /root/InfraStack
 
 El script hace todo: ZFS dataset, LXC container, Docker, stack completo y credenciales.
 Las credenciales quedan en `/root/nextcloud-credentials-ct210.txt` (chmod 600).
+
+Opciones adicionales (útiles para instancias de prueba aisladas):
+
+| Flag | Default | Descripción |
+|------|---------|-------------|
+| `--domain FQDN` | `nube.tecnosoul.com.ar` | Dominio público (trusted domain, overwrite*) |
+| `--dataset NAME` | `nextcloud` | Dataset bajo `hdd-pool/container-data/` |
+| `--trusted-proxy IP` | `192.168.2.200` | IP del reverse proxy (`TRUSTED_PROXIES`) |
+
+```bash
+./scripts/containers/nextcloud.sh -i 122 -n nextcloud-docker -m 6144 \
+    --dataset nc-docker --domain nc2.example.com
+```
+
+El script configura `TRUSTED_PROXIES` y usa la IP real del CT como trusted domain.
+MariaDB y Redis usan volúmenes Docker en el NVMe (no en el HDD) para evitar la latencia de disco mecánico en la base.
 
 Después del script, ir directo a [Fase 5: NPM](#fase-5-configurar-npm-ct200).
 
@@ -57,15 +75,12 @@ zfs create \
     hdd-pool/container-data/nextcloud
 
 # Crear estructura de directorios
-mkdir -p /hdd-pool/container-data/nextcloud/{data,config,db,redis}
+mkdir -p /hdd-pool/container-data/nextcloud/{data,config}
 
 # Permisos para container no privilegiado (uid offset = 100000)
 # www-data (uid 33)  → 100033 en host
-# mysql    (uid 999) → 100999 en host
 chown -R 100033:100033 /hdd-pool/container-data/nextcloud/data
 chown -R 100033:100033 /hdd-pool/container-data/nextcloud/config
-chown -R 100999:100999 /hdd-pool/container-data/nextcloud/db
-chown -R 100999:100999 /hdd-pool/container-data/nextcloud/redis
 ```
 
 ---
@@ -79,7 +94,7 @@ pct create 210 local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
     --cores 4 \
     --memory 4096 \
     --swap 2048 \
-    --rootfs data:20 \
+    --rootfs data:32 \
     --unprivileged 1 \
     --features nesting=1,keyctl=1 \
     --net0 name=eth0,bridge=vmbr1,ip=192.168.2.210/24,gw=192.168.2.1 \
@@ -192,8 +207,11 @@ nube.tecnosoul.com.ar.  A  15.235.57.208
 
 **Advanced tab** (requerido para Nextcloud):
 ```nginx
-client_max_body_size 10G;
+client_max_body_size 0;
 client_body_timeout 3600s;
+proxy_request_buffering off;
+proxy_read_timeout 3600s;
+proxy_send_timeout 3600s;
 
 proxy_set_header X-Forwarded-Host $host;
 proxy_set_header X-Forwarded-Proto $scheme;
@@ -274,13 +292,13 @@ zfs list -t snapshot | grep nextcloud
 **Nextcloud no arranca / error de DB:**
 ```bash
 docker compose logs db
-# Si hay error de permisos en /var/lib/mysql (ejecutar en venus HOST, no en el CT):
-chown -R 100999:100999 /hdd-pool/container-data/nextcloud/db
+# La DB vive en el volumen Docker nextcloud-db (NVMe); ver el estado con:
+docker volume inspect nextcloud-db
 ```
 
 **Error 413 Request Entity Too Large:**
 ```
-→ Agregar en NPM Advanced: client_max_body_size 10G;
+→ Agregar en NPM Advanced: client_max_body_size 0;
 ```
 
 **"Untrusted domain" al acceder:**

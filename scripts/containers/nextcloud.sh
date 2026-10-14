@@ -30,7 +30,7 @@ source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 
 DEFAULT_CORES=4
 DEFAULT_MEMORY=4096
-DEFAULT_ROOTFS_SIZE=20
+DEFAULT_ROOTFS_SIZE=32
 DEFAULT_NETWORK="192.168.2"
 DEFAULT_GATEWAY="192.168.2.1"
 DEFAULT_BRIDGE="vmbr1"
@@ -45,6 +45,10 @@ NC_APP_PATH="/opt/nextcloud"
 
 # Nextcloud URL (used in docker-compose trusted_domains)
 NC_DOMAIN="nube.tecnosoul.com.ar"
+
+# Reverse proxy (NPM / venusproxy, CT200): trusted for X-Forwarded-For so
+# Nextcloud sees the real client IP (brute-force throttling, logs)
+TRUSTED_PROXY="192.168.2.200"
 
 #=============================================================================
 # ZFS DATASET SETUP (on Proxmox host)
@@ -70,18 +74,12 @@ create_zfs_dataset() {
     # Create subdirectory structure
     mkdir -p "${NC_DATA_PATH}/data"
     mkdir -p "${NC_DATA_PATH}/config"
-    mkdir -p "${NC_DATA_PATH}/db"
-    mkdir -p "${NC_DATA_PATH}/redis"
 
     # Fix permissions for unprivileged container (uid/gid offset = 100000)
     # www-data in container = uid 33, offset → 100033 on host
-    # mysql in container    = uid 999, offset → 100999 on host
-    # redis in container    = uid 999, offset → 100999 on host
     log_step "Setting ZFS dataset permissions for unprivileged container"
     chown -R 100033:100033 "${NC_DATA_PATH}/data"
     chown -R 100033:100033 "${NC_DATA_PATH}/config"
-    chown -R 100999:100999 "${NC_DATA_PATH}/db"
-    chown -R 100999:100999 "${NC_DATA_PATH}/redis"
 
     log_success "ZFS dataset ready at ${NC_DATA_PATH}"
 }
@@ -153,7 +151,7 @@ create_nextcloud_container() {
     log_step "Creating LXC container"
     pct create "$ctid" local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
         --hostname "$hostname" \
-        --description "Nextcloud - nube.tecnosoul.com.ar" \
+        --description "Nextcloud - ${NC_DOMAIN}" \
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
@@ -203,7 +201,7 @@ create_nextcloud_container() {
     install_docker "$ctid"
 
     # Step 10: Deploy Nextcloud stack
-    deploy_nextcloud_stack "$ctid"
+    deploy_nextcloud_stack "$ctid" "$ip_address"
 
     # Step 11: Display summary
     display_nextcloud_summary "$ctid" "$hostname" "$ip_address"
@@ -269,6 +267,7 @@ install_docker() {
 
 deploy_nextcloud_stack() {
     local ctid=$1
+    local nc_ip=$2
 
     log_step "Deploying Nextcloud Docker stack"
 
@@ -322,7 +321,7 @@ services:
       MYSQL_USER: nextcloud
       MYSQL_PASSWORD: ${db_pass}
     volumes:
-      - /mnt/nextcloud-data/db:/var/lib/mysql
+      - nextcloud-db:/var/lib/mysql
     networks:
       - nextcloud-net
     healthcheck:
@@ -339,7 +338,7 @@ services:
     restart: unless-stopped
     command: redis-server --save 60 1 --loglevel warning
     volumes:
-      - /mnt/nextcloud-data/redis:/data
+      - nextcloud-redis:/data
     networks:
       - nextcloud-net
     healthcheck:
@@ -370,10 +369,11 @@ services:
       NEXTCLOUD_ADMIN_USER: admin
       NEXTCLOUD_ADMIN_PASSWORD: ${nc_admin_pass}
       # Domain
-      NEXTCLOUD_TRUSTED_DOMAINS: ${NC_DOMAIN} 192.168.2.210
+      NEXTCLOUD_TRUSTED_DOMAINS: ${NC_DOMAIN} ${nc_ip}
       OVERWRITEPROTOCOL: https
       OVERWRITECLIURL: https://${NC_DOMAIN}
       OVERWRITEHOST: ${NC_DOMAIN}
+      TRUSTED_PROXIES: ${TRUSTED_PROXY}
       # Redis
       REDIS_HOST: redis
       REDIS_HOST_PORT: 6379
@@ -410,6 +410,10 @@ services:
 
 volumes:
   nextcloud-html:
+    driver: local
+  nextcloud-db:
+    driver: local
+  nextcloud-redis:
     driver: local
 
 networks:
@@ -463,6 +467,10 @@ display_nextcloud_summary() {
     echo "   Forward IP:    ${ip_address}"
     echo "   Forward Port:  8080"
     echo "   Websockets:    ✅ enabled"
+    echo "   Advanced tab:  client_max_body_size 0;"
+    echo "                  proxy_request_buffering off;"
+    echo "                  proxy_read_timeout 3600s;"
+    echo "                  proxy_send_timeout 3600s;"
     echo "   SSL:           Let's Encrypt (force HTTPS)"
     echo ""
     echo "3. DNS Record:"
@@ -494,6 +502,9 @@ Options:
     -c, --cores NUM         CPU cores (default: ${DEFAULT_CORES})
     -m, --memory MB         Memory in MB (default: ${DEFAULT_MEMORY})
     -p, --ip-suffix NUM     Last octet of IP (default: same as CTID)
+    --domain FQDN           Public domain (default: ${NC_DOMAIN})
+    --dataset NAME          ZFS dataset under hdd-pool/container-data (default: ${NC_DATASET})
+    --trusted-proxy IP      Reverse proxy IP (default: ${TRUSTED_PROXY})
     -h, --help              Show this help
 
 Examples:
@@ -503,10 +514,14 @@ Examples:
     # Custom resources
     $0 -i 210 -n nube -c 6 -m 8192
 
+    # Isolated test instance (own dataset and domain)
+    $0 -i 122 -n nextcloud-docker -m 6144 --dataset nc-docker --domain nc2.example.com
+
 What Gets Deployed:
     • Unprivileged LXC container (nesting=1 for Docker)
     • Root disk: ${DEFAULT_ROOTFS_SIZE}GB on NVMe (data pool)
-    • Data mount: hdd-pool/container-data/nextcloud → /mnt/nextcloud-data
+    • Data mount: hdd-pool/container-data/<dataset> → /mnt/nextcloud-data (user files + config)
+    • MariaDB and Redis use Docker volumes on the NVMe root disk
     • ZFS dataset created automatically with proper permissions
     • InfraStack + base packages + Zsh
     • Docker CE + Docker Compose plugin
@@ -539,6 +554,9 @@ main() {
             -c|--cores)     CORES="$2";  shift 2 ;;
             -m|--memory)    MEMORY="$2"; shift 2 ;;
             -p|--ip-suffix) IP_SUFFIX="$2"; shift 2 ;;
+            --domain)       NC_DOMAIN="$2"; shift 2 ;;
+            --dataset)      NC_DATASET="$2"; shift 2 ;;
+            --trusted-proxy) TRUSTED_PROXY="$2"; shift 2 ;;
             -h|--help)      show_help ;;
             *) log_error "Unknown option: $1"; show_help ;;
         esac
@@ -550,6 +568,9 @@ main() {
     fi
 
     check_root
+
+    # Recompute after option parsing (--dataset may have changed it)
+    NC_DATA_PATH="${HDD_POOL_BASE}/${NC_DATASET}"
 
     create_nextcloud_container "$CTID" "$NAME" "$CORES" "$MEMORY" "$IP_SUFFIX"
 }

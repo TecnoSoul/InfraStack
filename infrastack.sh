@@ -7,12 +7,13 @@
 # Description: Command-line interface for InfraStack tools
 # Usage: infrastack <category> <command> [options]
 # Author: TecnoSoul
-# Version: 2.1.0
+# Version: 2.2.0
 #
 # History:
 #   v1.0.0 - Initial release (setup, php, health modules)
 #   v2.0.0 - Integrated RadioStack as radio module
 #   v2.1.0 - Added containers category (debian-base, node-webapp, nextcloud, vaultwarden)
+#   v2.2.0 - nextcloud.sh: --domain/--dataset/--trusted-proxy flags, DB/Redis on NVMe
 #=============================================================================
 
 set -euo pipefail
@@ -38,7 +39,7 @@ INFRASTACK_CONFIG="${INFRASTACK_CONFIG:-/etc/infrastack/infrastack.conf}"
 # Source common library
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
 
-VERSION="2.1.0"
+VERSION="2.2.0"
 
 #=============================================================================
 # COMMAND FUNCTIONS
