@@ -1,4 +1,6 @@
 *.conf
 !*.conf.example
 .claude/settings.local.json
-.claude/settings.local.json
+
+# Private infrastructure notes (real hosts/IPs); never commit
+.private/

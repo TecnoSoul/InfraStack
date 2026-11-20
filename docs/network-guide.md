@@ -423,7 +423,7 @@ After deploying container:
 
 ## Related Documentation
 
-- [Virtualmin Deployment](virtualmin-deployment.md)
+- [Virtualmin Deployment](virtualmin-deployment-guide.md)
 - [SSL Certificate Management](ssl-management.md)
 - [Container Deployment](containers.md)
 

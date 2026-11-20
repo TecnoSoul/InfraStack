@@ -11,12 +11,12 @@
 # Usage: infrastack containers node-webapp -i <ctid> -n <name> [OPTIONS]
 #
 # Examples:
-#   # MyApp production — MariaDB, custom hostname, port 4001
+#   # Production — MariaDB, custom hostname, port 4001
 #   infrastack containers node-webapp -i 150 -n myapp-prod \
 #     --hostname app.example.com \
 #     --db-type mariadb --db-name myapp_prod --app-port 4001
 #
-#   # MyService staging — PostgreSQL, default port
+#   # Staging — PostgreSQL, default port
 #   infrastack containers node-webapp -i 151 -n myapp-staging \
 #     --hostname myapp-staging.example.com \
 #     --db-type postgres --db-name myapp_staging
@@ -560,12 +560,12 @@ Other:
     -h, --help                  Show this help
 
 Examples:
-    # MyApp production
+    # Production
     $0 -i 150 -n myapp-prod \\
         --hostname app.example.com \\
         --db-type mariadb --db-name myapp_prod --app-port 4001
 
-    # MyService staging
+    # Staging
     $0 -i 151 -n myapp-staging \\
         --db-type postgres --db-name myapp_staging
 
