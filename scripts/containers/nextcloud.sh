@@ -474,7 +474,7 @@ display_nextcloud_summary() {
     echo "   SSL:           Let's Encrypt (force HTTPS)"
     echo ""
     echo "3. DNS Record:"
-    echo "   ${NC_DOMAIN}.  A  203.0.113.20"
+    echo "   ${NC_DOMAIN}.  A  <NPM_PUBLIC_IP>"
     echo ""
     echo "4. After NPM SSL is working, verify Nextcloud config:"
     echo "   pct exec ${ctid} -- docker exec nextcloud-app php occ config:system:get overwriteprotocol"

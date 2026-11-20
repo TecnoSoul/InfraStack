@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Usage examples in README, CLAUDE.md, `node-webapp.sh` and `debian-base.sh` now use generic names (`myapp-prod`, `app.example.com`) instead of real project and domain names.
+- Docs and help text no longer expose real infrastructure: public IPs became documentation-range placeholders (`203.0.113.x`), server names became generic (`pve1`, `pve2`, `web1`–`web4`, `example.com`), and `docs/virtualmin-deployment-guide.md` was renamed to `docs/virtualmin-deployment-guide.md`. The Nextcloud and Vaultwarden DNS hints now print `<NPM_PUBLIC_IP>`.
+
+### Known issues
+- `deploy-proxmox-ssl.sh` (host/IP list) and `rsync-certs-proxmox.sh` (`REMOTEHOST`) still contain real hostnames and public IPs as working defaults; they will move to example config files in a follow-up.
+- `docs/network-guide.md` links to a non-existent `containers.md`.
 
 ## [2.2.0] - 2026-10-14
 
