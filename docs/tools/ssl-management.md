@@ -35,30 +35,27 @@ Ensure wildcard certificate exists at:
 cd /root/InfraStack
 git pull
 
-# Create local configuration
-cp scripts/ssl-management/rsync-certs-proxmox.conf.example \
-   scripts/ssl-management/.rsync-certs-proxmox.conf
-
-# Edit configuration
-nano scripts/ssl-management/.rsync-certs-proxmox.conf
+# Set the certificate source in the InfraStack config
+nano /etc/infrastack/infrastack.conf
 ```
 
-**For external Proxmox hosts:**
 ```bash
-REMOTEHOST=web1.example.com
-REMOTEPORT=2200
+SSL_REMOTE_HOST="web1.example.com"   # certificate source
+SSL_REMOTE_PORT=2200                 # SSH port (default 22)
+SSL_REMOTE_USER="certuser"
+SSL_CERT_DIR="/home/certuser"        # directory with ssl.cert / ssl.key
 ```
 
-**For Proxmox host where certificate source is a local VM:**
-```bash
-REMOTEHOST=192.168.1.100
-REMOTEPORT=22
-```
+If the certificate source is a local VM on this host, use its internal IP and port 22.
+
+The script stops with an error if these settings are missing. A legacy
+`scripts/ssl-management/.rsync-certs-proxmox.conf` (`REMOTEHOST`, `REMOTEPORT`,
+`REMOTEUSER`, `REMOTEDIR`) is still read and overrides the values above.
 
 #### 3. Setup SSH Key Authentication
 ```bash
 ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N ""
-ssh-copy-id -p <PORT> tecno@<HOST>
+ssh-copy-id -p <PORT> certuser@<HOST>
 ```
 
 #### 4. Test the Script
@@ -100,14 +97,19 @@ Skips confirmation prompt.
 
 ### Configuration Options
 
-All options can be overridden in `.rsync-certs-proxmox.conf`:
+Set in `/etc/infrastack/infrastack.conf` (or the legacy names in `.rsync-certs-proxmox.conf`):
+
+| Option | Legacy name | Default | Description |
+|--------|-------------|---------|-------------|
+| `SSL_REMOTE_HOST` | `REMOTEHOST` | — (required) | Certificate source hostname |
+| `SSL_REMOTE_PORT` | `REMOTEPORT` | 22 | SSH port |
+| `SSL_REMOTE_USER` | `REMOTEUSER` | — (required) | SSH user |
+| `SSL_CERT_DIR` | `REMOTEDIR` | — (required) | Certificate directory on source |
+
+Legacy-file-only options:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `REMOTEHOST` | web1.example.com | Certificate source hostname |
-| `REMOTEPORT` | 2200 | SSH port |
-| `REMOTEUSER` | tecno | SSH user |
-| `REMOTEDIR` | /home/certuser/ | Certificate directory on source |
 | `LOCALDIR` | /tmp/ssl-staging/ | Temporary staging directory |
 | `PROXMOX_CERT_DIR` | /etc/pve/local | Proxmox certificate directory |
 | `LOG_FILE` | /var/log/ssl-cert-sync.log | Log file location |
@@ -151,19 +153,19 @@ tail -f /var/log/ssl-cert-sync-cron.log
 
 Test connectivity:
 ```bash
-ssh -p <PORT> tecno@<HOST> "ls -la /home/certuser/ssl.*"
+ssh -p <PORT> certuser@<HOST> "ls -la /home/certuser/ssl.*"
 ```
 
 Re-copy SSH key if needed:
 ```bash
-ssh-copy-id -p <PORT> tecno@<HOST>
+ssh-copy-id -p <PORT> certuser@<HOST>
 ```
 
 #### Certificate Not Updating
 
 Check certificate on source:
 ```bash
-ssh -p <PORT> tecno@<HOST> "openssl x509 -in /home/certuser/ssl.cert -noout -dates"
+ssh -p <PORT> certuser@<HOST> "openssl x509 -in /home/certuser/ssl.cert -noout -dates"
 ```
 
 Manually run sync:

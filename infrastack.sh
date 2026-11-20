@@ -30,8 +30,8 @@ fi
 # Export for use in submodules
 export INFRASTACK_ROOT
 
-# Configuration file location
-INFRASTACK_CONFIG="${INFRASTACK_CONFIG:-/etc/infrastack/infrastack.conf}"
+# Configuration file location (exported so container/radio subprocesses load the same file)
+export INFRASTACK_CONFIG="${INFRASTACK_CONFIG:-/etc/infrastack/infrastack.conf}"
 
 # Load configuration if exists
 [[ -f "$INFRASTACK_CONFIG" ]] && source "$INFRASTACK_CONFIG"

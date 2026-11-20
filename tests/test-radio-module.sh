@@ -4,7 +4,8 @@
 # Tests the radio module integration without deploying actual containers
 #=============================================================================
 
-set -euo pipefail
+# No -e: failed assertions are counted and reported in the summary, not fatal
+set -uo pipefail
 
 # Get script directory and InfraStack root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,17 +32,17 @@ log_test() {
 
 log_pass() {
     echo -e "${GREEN}[PASS]${NC} $1"
-    ((TESTS_PASSED++))
+    TESTS_PASSED=$((TESTS_PASSED + 1))
 }
 
 log_fail() {
     echo -e "${RED}[FAIL]${NC} $1"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 }
 
 log_skip() {
     echo -e "${YELLOW}[SKIP]${NC} $1"
-    ((TESTS_SKIPPED++))
+    TESTS_SKIPPED=$((TESTS_SKIPPED + 1))
 }
 
 assert_file_exists() {
@@ -218,7 +219,7 @@ test_imports() {
     log_test "Checking scripts use INFRASTACK_ROOT..."
     assert_contains "$INFRASTACK_ROOT/scripts/radio/platforms/deploy.sh" "INFRASTACK_ROOT" "deploy.sh uses INFRASTACK_ROOT"
     assert_contains "$INFRASTACK_ROOT/scripts/radio/tools/status.sh" "INFRASTACK_ROOT" "status.sh uses INFRASTACK_ROOT"
-    assert_contains "$INFRASTACK_ROOT/scripts/lib/container.sh" "INFRASTACK_ROOT" "container.sh uses INFRASTACK_ROOT"
+    assert_contains "$INFRASTACK_ROOT/scripts/lib/container.sh" 'source "$SCRIPT_DIR/common.sh"' "container.sh sources common.sh from its own directory"
 
     log_test "Checking scripts source from scripts/lib/..."
     assert_contains "$INFRASTACK_ROOT/scripts/radio/tools/status.sh" 'source.*scripts/lib/common.sh' "status.sh sources common.sh"

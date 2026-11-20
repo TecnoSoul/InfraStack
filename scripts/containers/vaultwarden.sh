@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+load_container_defaults
 source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 
 #=============================================================================
@@ -29,16 +30,17 @@ source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 DEFAULT_CORES=2
 DEFAULT_MEMORY=512
 DEFAULT_ROOTFS_SIZE=8
-DEFAULT_NETWORK="192.168.2"
-DEFAULT_GATEWAY="192.168.2.1"
-DEFAULT_BRIDGE="vmbr1"
+DEFAULT_NETWORK="$CT_NETWORK"
+DEFAULT_GATEWAY="$CT_GATEWAY"
+DEFAULT_BRIDGE="$CT_BRIDGE"
 
-HDD_POOL_BASE="/hdd-pool/container-data"
+HDD_POOL_BASE="/${CT_DATA_BASE}"
 VW_DATASET="vaultwarden"
 VW_DATA_PATH="${HDD_POOL_BASE}/${VW_DATASET}"
 
 VW_APP_PATH="/opt/vaultwarden"
-VW_DOMAIN="vault.example.com"
+# Precedence: --domain, VAULTWARDEN_DOMAIN in infrastack.conf, <name>.<INFRASTACK_DOMAIN>
+VW_DOMAIN="${VAULTWARDEN_DOMAIN:-}"
 
 # Vaultwarden listens on this port inside the container
 VW_PORT=8080
@@ -48,15 +50,15 @@ VW_PORT=8080
 #=============================================================================
 
 create_zfs_dataset() {
-    log_step "Setting up ZFS dataset on hdd-pool"
+    log_step "Setting up ZFS dataset on ${CT_DATA_BASE%%/*}"
 
-    if ! zfs list "hdd-pool/container-data/${VW_DATASET}" &>/dev/null 2>&1; then
+    if ! zfs list "${CT_DATA_BASE}/${VW_DATASET}" &>/dev/null 2>&1; then
         zfs create \
             -o recordsize=16k \
             -o atime=off \
             -o compression=lz4 \
-            "hdd-pool/container-data/${VW_DATASET}"
-        log_success "ZFS dataset created: hdd-pool/container-data/${VW_DATASET}"
+            "${CT_DATA_BASE}/${VW_DATASET}"
+        log_success "ZFS dataset created: ${CT_DATA_BASE}/${VW_DATASET}"
     else
         log_info "ZFS dataset already exists, skipping"
     fi
@@ -101,7 +103,7 @@ create_vaultwarden_container() {
     local memory=${4:-$DEFAULT_MEMORY}
     local ip_suffix=${5:-$ctid}
 
-    local hostname="${name}.example.com"
+    local hostname="${name}.${INFRASTACK_DOMAIN}"
     local ip_address="${DEFAULT_NETWORK}.${ip_suffix}"
     local swap=$((memory / 2))
 
@@ -134,18 +136,18 @@ create_vaultwarden_container() {
 
     # Step 2: Create LXC container
     log_step "Creating LXC container"
-    pct create "$ctid" local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
+    pct create "$ctid" "$CT_TEMPLATE" \
         --hostname "$hostname" \
-        --description "Vaultwarden - vault.example.com" \
+        --description "Vaultwarden - ${VW_DOMAIN}" \
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
-        --rootfs "data:${DEFAULT_ROOTFS_SIZE}" \
+        --rootfs "${CT_ROOTFS_STORAGE}:${DEFAULT_ROOTFS_SIZE}" \
         --unprivileged 1 \
         --features "nesting=1,keyctl=1" \
         --net0 "name=eth0,bridge=${DEFAULT_BRIDGE},ip=${ip_address}/24,gw=${DEFAULT_GATEWAY}" \
-        --nameserver 8.8.8.8 \
-        --searchdomain example.com \
+        --nameserver "$CT_NAMESERVER" \
+        --searchdomain "${INFRASTACK_DOMAIN:-${hostname#*.}}" \
         --ostype debian \
         --start 0
 
@@ -350,7 +352,7 @@ display_vaultwarden_summary() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "1. DNS Record:"
-    echo "   ${VW_DOMAIN}.  A  <NPM_PUBLIC_IP>"
+    echo "   ${VW_DOMAIN}.  A  ${PROXY_PUBLIC_IP}"
     echo ""
     echo "2. NPM (CT200) - Add Proxy Host:"
     echo "   Domain:        ${VW_DOMAIN}"
@@ -391,6 +393,7 @@ Options:
     -c, --cores NUM         CPU cores (default: ${DEFAULT_CORES})
     -m, --memory MB         Memory in MB (default: ${DEFAULT_MEMORY})
     -p, --ip-suffix NUM     Last octet of IP (default: same as CTID)
+    --domain FQDN           Public domain (default: VAULTWARDEN_DOMAIN or <name>.<INFRASTACK_DOMAIN>)
     -h, --help              Show this help
 
 Examples:
@@ -399,7 +402,7 @@ Examples:
 What Gets Deployed:
     • Unprivileged LXC (nesting=1 for Docker)
     • Root disk: ${DEFAULT_ROOTFS_SIZE}GB on NVMe
-    • Data: hdd-pool/container-data/vaultwarden → /mnt/vaultwarden-data
+    • Data: ${CT_DATA_BASE}/${VW_DATASET} → /mnt/vaultwarden-data
     • InfraStack + base packages + Zsh
     • Docker CE
     • Vaultwarden (single container, SQLite)
@@ -430,6 +433,7 @@ main() {
             -c|--cores)     CORES="$2";  shift 2 ;;
             -m|--memory)    MEMORY="$2"; shift 2 ;;
             -p|--ip-suffix) IP_SUFFIX="$2"; shift 2 ;;
+            --domain)       VW_DOMAIN="$2"; shift 2 ;;
             -h|--help)      show_help ;;
             *) log_error "Unknown option: $1"; show_help ;;
         esac
@@ -441,6 +445,10 @@ main() {
     fi
 
     check_root
+
+    require_config INFRASTACK_DOMAIN "used for the container hostname"
+    VW_DOMAIN="${VW_DOMAIN:-${NAME}.${INFRASTACK_DOMAIN}}"
+
     create_vaultwarden_container "$CTID" "$NAME" "$CORES" "$MEMORY" "$IP_SUFFIX"
 }
 
