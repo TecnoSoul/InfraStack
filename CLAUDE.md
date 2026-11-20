@@ -83,9 +83,9 @@ Qué instala: Debian 13 LXC (unprivileged, nesting=1) · InfraStack + Zsh · Doc
 
 Ejemplo producción:
 ```bash
-infrastack containers node-webapp -i 150 -n swisshub-prod \
-  --hostname hub.swiss-net.com.ar \
-  --db-type mariadb --db-name swissnet_hub --app-port 4001
+infrastack containers node-webapp -i 150 -n myapp-prod \
+  --hostname app.example.com \
+  --db-type mariadb --db-name myapp_prod --app-port 4001
 ```
 
 **`debian-base.sh` flags:**
@@ -102,7 +102,7 @@ infrastack containers node-webapp -i 150 -n swisshub-prod \
 
 Ejemplo con hostname externo:
 ```bash
-./scripts/containers/debian-base.sh -i 140 -n novacast --hostname cast.novamusic.online -c 2 -m 2048 -p 140
+./scripts/containers/debian-base.sh -i 140 -n myservice --hostname svc.example.org -c 2 -m 2048 -p 140
 ```
 
 ### Container deployment pattern

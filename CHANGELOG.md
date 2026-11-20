@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Usage examples in README, CLAUDE.md, `node-webapp.sh` and `debian-base.sh` now use generic names (`myapp-prod`, `app.example.com`) instead of real project and domain names.
+
 ## [2.2.0] - 2026-10-14
 
 ### Added

@@ -11,15 +11,15 @@
 # Usage: infrastack containers node-webapp -i <ctid> -n <name> [OPTIONS]
 #
 # Examples:
-#   # SwissHub production — MariaDB, custom hostname, port 4001
-#   infrastack containers node-webapp -i 150 -n swisshub-prod \
-#     --hostname hub.swiss-net.com.ar \
-#     --db-type mariadb --db-name swissnet_hub --app-port 4001
+#   # Production — MariaDB, custom hostname, port 4001
+#   infrastack containers node-webapp -i 150 -n myapp-prod \
+#     --hostname app.example.com \
+#     --db-type mariadb --db-name myapp_prod --app-port 4001
 #
-#   # NovaCast staging — PostgreSQL, default port
-#   infrastack containers node-webapp -i 151 -n novacast-staging \
-#     --hostname novacast-staging.tecnosoul.com.ar \
-#     --db-type postgres --db-name novacast_staging
+#   # Staging — PostgreSQL, default port
+#   infrastack containers node-webapp -i 151 -n myapp-staging \
+#     --hostname myapp-staging.example.com \
+#     --db-type postgres --db-name myapp_staging
 #
 #   # API-only backend (no nginx)
 #   infrastack containers node-webapp -i 152 -n myapi --no-nginx --app-port 8080
@@ -560,14 +560,14 @@ Other:
     -h, --help                  Show this help
 
 Examples:
-    # SwissHub production
-    $0 -i 150 -n swisshub-prod \\
-        --hostname hub.swiss-net.com.ar \\
-        --db-type mariadb --db-name swissnet_hub --app-port 4001
+    # Production
+    $0 -i 150 -n myapp-prod \\
+        --hostname app.example.com \\
+        --db-type mariadb --db-name myapp_prod --app-port 4001
 
-    # NovaCast staging
-    $0 -i 151 -n novacast-staging \\
-        --db-type postgres --db-name novacast_staging
+    # Staging
+    $0 -i 151 -n myapp-staging \\
+        --db-type postgres --db-name myapp_staging
 
     # API-only (no static frontend)
     $0 -i 152 -n myapi --no-nginx --app-port 8080

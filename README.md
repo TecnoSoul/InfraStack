@@ -180,12 +180,12 @@ See [Radio Module Documentation](docs/radio/getting-started.md) for full details
 
 ```bash
 # Generic Debian container
-infrastack containers debian-base -i 140 -n novacast --hostname cast.novamusic.online
+infrastack containers debian-base -i 140 -n myservice --hostname svc.example.org
 
 # Node.js web app (Node + PM2 + DB in Docker + nginx)
-infrastack containers node-webapp -i 150 -n swisshub-prod \
-  --hostname hub.swiss-net.com.ar \
-  --db-type mariadb --db-name swissnet_hub --app-port 4001
+infrastack containers node-webapp -i 150 -n myapp-prod \
+  --hostname app.example.com \
+  --db-type mariadb --db-name myapp_prod --app-port 4001
 
 # API-only backend with PostgreSQL, no nginx
 infrastack containers node-webapp -i 152 -n myapi --db-type postgres --no-nginx --app-port 8080
