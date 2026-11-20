@@ -245,9 +245,20 @@ infrastack help
 
 ## Configuration
 
-Configuration file: `/etc/infrastack/infrastack.conf`
+Configuration file: `/etc/infrastack/infrastack.conf` (copy it from [configs/infrastack.conf.example](configs/infrastack.conf.example)).
 
-Example configuration is provided at `/etc/infrastack/infrastack.conf.example`
+Site-specific values live only in this file, never in the scripts:
+
+| Setting | Used by | Default |
+|---------|---------|---------|
+| `INFRASTACK_DOMAIN` | container hostnames `<name>.<domain>`, LXC search domain | required (unless `--hostname`) |
+| `CT_NETWORK`, `CT_GATEWAY`, `CT_BRIDGE`, `CT_NAMESERVER` | container networking | `192.168.2`, `.1`, `vmbr1`, `8.8.8.8` |
+| `CT_TEMPLATE`, `CT_ROOTFS_STORAGE`, `CT_DATA_BASE` | LXC template, root disk storage, ZFS data parent | Debian 13, `data`, `hdd-pool/container-data` |
+| `PROXY_INTERNAL_IP`, `PROXY_PUBLIC_IP` | Nextcloud trusted proxy, DNS hints | `<network>.200`, placeholder |
+| `NEXTCLOUD_DOMAIN`, `VAULTWARDEN_DOMAIN` | public service URLs | `<name>.<INFRASTACK_DOMAIN>` |
+| `SSL_CERT_DIR`, `SSL_REMOTE_HOST`, `SSL_REMOTE_PORT`, `SSL_REMOTE_USER`, `PROXMOX_HOSTS` | SSL certificate sync | required for those scripts |
+
+Command-line flags override the config.
 
 ---
 

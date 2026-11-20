@@ -236,8 +236,8 @@ validate_ip() {
 # CONFIGURATION MANAGEMENT (from RadioStack)
 #=============================================================================
 
-# Default configuration file location
-INFRASTACK_CONF="${INFRASTACK_CONF:-/etc/infrastack/infrastack.conf}"
+# Default configuration file location (INFRASTACK_CONFIG is the name used by infrastack.sh)
+INFRASTACK_CONF="${INFRASTACK_CONF:-${INFRASTACK_CONFIG:-/etc/infrastack/infrastack.conf}}"
 
 # Function: load_config
 # Purpose: Load InfraStack configuration file
@@ -273,6 +273,45 @@ get_config_value() {
     # Use indirect expansion to get variable value
     local value="${!var_name:-$default_value}"
     echo "$value"
+}
+
+# Function: require_config
+# Purpose: Exit with a clear message if a required setting is empty
+# Parameters:
+#   $1 - Variable name
+#   $2 - Hint appended to the error (optional)
+# Example: require_config INFRASTACK_DOMAIN "or pass --hostname"
+require_config() {
+    local var_name=$1
+    local hint=${2:-}
+
+    if [[ -z "${!var_name:-}" ]]; then
+        die "$var_name is not set. Add it to $INFRASTACK_CONF${hint:+ ($hint)}"
+    fi
+}
+
+# Function: load_container_defaults
+# Purpose: Load infrastack.conf (if present) and set the defaults used by
+#          container deployment scripts. Values set in the config win.
+#          Network defaults match the internal Proxmox bridge setup;
+#          INFRASTACK_DOMAIN has no default and must come from the config.
+load_container_defaults() {
+    load_config || true
+
+    CT_NETWORK="${CT_NETWORK:-192.168.2}"
+    CT_GATEWAY="${CT_GATEWAY:-${CT_NETWORK}.1}"
+    CT_BRIDGE="${CT_BRIDGE:-vmbr1}"
+    CT_NAMESERVER="${CT_NAMESERVER:-8.8.8.8}"
+    CT_TEMPLATE="${CT_TEMPLATE:-local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst}"
+    CT_ROOTFS_STORAGE="${CT_ROOTFS_STORAGE:-data}"
+    # ZFS parent dataset for service data; mounted at /<dataset> on the host
+    CT_DATA_BASE="${CT_DATA_BASE:-hdd-pool/container-data}"
+
+    # Reverse proxy (NPM): internal IP for trusted proxies, public IP for DNS hints
+    PROXY_INTERNAL_IP="${PROXY_INTERNAL_IP:-${CT_NETWORK}.200}"
+    PROXY_PUBLIC_IP="${PROXY_PUBLIC_IP:-<PROXY_PUBLIC_IP>}"
+
+    INFRASTACK_DOMAIN="${INFRASTACK_DOMAIN:-}"
 }
 
 #=============================================================================
@@ -359,7 +398,7 @@ export -f check_root check_command check_debian
 export -f check_proxmox_version validate_ctid validate_ip
 
 # Configuration
-export -f load_config get_config_value
+export -f load_config get_config_value require_config load_container_defaults
 
 # Utilities
 export -f confirm_action detect_php_versions wait_with_progress

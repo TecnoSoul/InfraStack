@@ -19,3 +19,51 @@ OPTIONAL_SERVICES=("nginx" "apache2" "mysql" "mariadb" "postgresql")
 
 # Xdebug output directory
 XDEBUG_OUTPUT_DIR="/tmp/xdebug"
+
+#=============================================================================
+# Site settings (Proxmox container deployment)
+# Values below show the built-in defaults unless marked "required".
+#=============================================================================
+
+# Base domain for container hostnames (<name>.<domain>) and the LXC search
+# domain. Required unless you pass --hostname to debian-base / node-webapp.
+INFRASTACK_DOMAIN="example.com"
+
+# Internal container network: CT IP = ${CT_NETWORK}.<ctid or --ip-suffix>
+#CT_NETWORK="192.168.2"
+#CT_GATEWAY="192.168.2.1"
+#CT_BRIDGE="vmbr1"
+#CT_NAMESERVER="8.8.8.8"
+
+# LXC template and storage
+#CT_TEMPLATE="local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
+#CT_ROOTFS_STORAGE="data"                    # Proxmox storage for root disks
+#CT_DATA_BASE="hdd-pool/container-data"      # ZFS parent dataset for service data
+
+# Reverse proxy (Nginx Proxy Manager)
+#PROXY_INTERNAL_IP="192.168.2.200"           # trusted proxy (Nextcloud TRUSTED_PROXIES)
+PROXY_PUBLIC_IP="203.0.113.20"               # shown in DNS hints after deployment
+
+# Public service domains (default: <name>.<INFRASTACK_DOMAIN>; --domain overrides)
+#NEXTCLOUD_DOMAIN="cloud.example.com"
+#VAULTWARDEN_DOMAIN="vault.example.com"
+
+#=============================================================================
+# SSL certificate sync (scripts/ssl-management)
+#=============================================================================
+
+# Directory with the wildcard certificate (ssl.cert, ssl.key) on the
+# certificate source host (e.g. the Virtualmin user's home)
+SSL_CERT_DIR="/home/certuser"
+
+# rsync-certs-proxmox.sh (runs on each Proxmox host): where to pull from
+SSL_REMOTE_HOST="certs.example.com"
+SSL_REMOTE_PORT=22
+SSL_REMOTE_USER="certuser"
+
+# deploy-proxmox-ssl.sh (runs on the certificate source): hosts to push to.
+# Format "HOSTNAME:IP". Use plain assignment, not "declare -a".
+PROXMOX_HOSTS=(
+    "pve1.example.com:203.0.113.30"
+    "pve2.example.com:203.0.113.10"
+)

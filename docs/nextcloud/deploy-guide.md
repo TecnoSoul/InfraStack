@@ -46,7 +46,7 @@ Opciones adicionales (útiles para instancias de prueba aisladas):
 
 | Flag | Default | Descripción |
 |------|---------|-------------|
-| `--domain FQDN` | `cloud.example.com` | Dominio público (trusted domain, overwrite*) |
+| `--domain FQDN` | `NEXTCLOUD_DOMAIN` o `<name>.<INFRASTACK_DOMAIN>` | Dominio público (trusted domain, overwrite*) |
 | `--dataset NAME` | `nextcloud` | Dataset bajo `hdd-pool/container-data/` |
 | `--trusted-proxy IP` | `192.168.2.200` | IP del reverse proxy (`TRUSTED_PROXIES`) |
 

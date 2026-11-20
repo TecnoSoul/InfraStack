@@ -59,19 +59,27 @@ create_base_container() {
     # Calculate swap as 1/4 of memory
     local swap=$((memory / 4))
 
-    # Create container with standard configuration
-    if ! pct create "$ctid" local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
+    # Search domain: INFRASTACK_DOMAIN, else the domain part of an FQDN hostname
+    local searchdomain="${INFRASTACK_DOMAIN:-}"
+    if [[ -z "$searchdomain" && "$hostname" == *.* ]]; then
+        searchdomain="${hostname#*.}"
+    fi
+    local search_args=()
+    [[ -n "$searchdomain" ]] && search_args=(--searchdomain "$searchdomain")
+
+    # Create container with standard configuration (CT_* settings from infrastack.conf)
+    if ! pct create "$ctid" "${CT_TEMPLATE:-local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst}" \
         --hostname "$hostname" \
         --description "$description" \
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
-        --rootfs data:32 \
+        --rootfs "${CT_ROOTFS_STORAGE:-data}:32" \
         --unprivileged 1 \
         --features nesting=1,keyctl=1 \
-        --net0 name=eth0,bridge=vmbr1,ip="${ip_address}/24",gw=192.168.2.1 \
-        --nameserver 8.8.8.8 \
-        --searchdomain example.com \
+        --net0 name=eth0,bridge="${CT_BRIDGE:-vmbr1}",ip="${ip_address}/24",gw="${CT_GATEWAY:-192.168.2.1}" \
+        --nameserver "${CT_NAMESERVER:-8.8.8.8}" \
+        "${search_args[@]}" \
         --ostype debian \
         --start 0; then
         log_error "Failed to create container $ctid"

@@ -19,17 +19,24 @@ set -euo pipefail  # Exit on error, undefined vars, pipe failures
 # Configuration
 ################################################################################
 
-CERT_SOURCE="/home/certuser"
 LOG_FILE="/var/log/proxmox-cert-deploy.log"
 SCRIPT_NAME="$(basename "$0")"
-VERSION="1.0.0"
+VERSION="1.1.0"
 
-# Proxmox hosts configuration
-# Format: "HOSTNAME:IP_ADDRESS"
-declare -a PROXMOX_HOSTS=(
-    "pve1.example.com:203.0.113.30"
-    "pve2.example.com:203.0.113.10"
-)
+# Site-specific settings come from the InfraStack config file:
+#   SSL_CERT_DIR      directory holding ssl.cert and ssl.key (Virtualmin home)
+#   PROXMOX_HOSTS     array of "HOSTNAME:IP_ADDRESS" entries to deploy to
+# See configs/infrastack.conf.example.
+INFRASTACK_CONF="${INFRASTACK_CONF:-${INFRASTACK_CONFIG:-/etc/infrastack/infrastack.conf}}"
+SSL_CERT_DIR=""
+PROXMOX_HOSTS=()
+
+if [[ -f "$INFRASTACK_CONF" ]]; then
+    # shellcheck disable=SC1090
+    source "$INFRASTACK_CONF"
+fi
+
+CERT_SOURCE="${SSL_CERT_DIR%/}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -89,6 +96,13 @@ check_prerequisites() {
         exit 1
     fi
     
+    # Check required configuration
+    if [[ -z "$CERT_SOURCE" ]] || [[ ${#PROXMOX_HOSTS[@]} -eq 0 ]]; then
+        log_error "SSL_CERT_DIR and PROXMOX_HOSTS must be set in ${INFRASTACK_CONF}"
+        log_error "See configs/infrastack.conf.example"
+        exit 1
+    fi
+
     # Check if certificate files exist
     if [[ ! -f "${CERT_SOURCE}/ssl.cert" ]] || [[ ! -f "${CERT_SOURCE}/ssl.key" ]]; then
         log_error "Certificate files not found in ${CERT_SOURCE}"
@@ -244,7 +258,7 @@ main() {
         echo "────────────────────────────────────────────────────────────"
         
         if deploy_to_host "$hostname" "$ip" "$temp_dir"; then
-            ((success_count++))
+            success_count=$((success_count + 1))
         fi
     done
     
