@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Site settings in `/etc/infrastack/infrastack.conf`: `INFRASTACK_DOMAIN`, `CT_*` network/storage/template settings, `PROXY_INTERNAL_IP`, `PROXY_PUBLIC_IP`, `NEXTCLOUD_DOMAIN`, `VAULTWARDEN_DOMAIN`, and SSL sync settings (`SSL_CERT_DIR`, `SSL_REMOTE_HOST`, `SSL_REMOTE_PORT`, `SSL_REMOTE_USER`, `PROXMOX_HOSTS`). All are documented in `configs/infrastack.conf.example`.
+- `common.sh`: `load_container_defaults` and `require_config` helpers.
+- `vaultwarden.sh`: `--domain` flag.
+- `tests/check-private-data.sh`: fails if strings listed in the gitignored `.private/patterns.txt` appear in tracked files.
+
 ### Changed
+- **Breaking:** container scripts require `INFRASTACK_DOMAIN` in the config (unless `--hostname` is given); they no longer default to a built-in domain. Nextcloud and Vaultwarden domains default to `<name>.<INFRASTACK_DOMAIN>`.
+- **Breaking:** `deploy-proxmox-ssl.sh` reads `SSL_CERT_DIR` and `PROXMOX_HOSTS` from the config; `rsync-certs-proxmox.sh` reads `SSL_REMOTE_*`/`SSL_CERT_DIR` (the legacy `.rsync-certs-proxmox.conf` still overrides). Both exit with an error when unconfigured instead of using built-in hosts.
+- Container scripts and `create_base_container` take network, template, storage and nameserver from the config, with the previous values as defaults.
+- `infrastack.sh` exports `INFRASTACK_CONFIG`, so container and radio subprocesses load the same config file.
 - Usage examples in README, CLAUDE.md, `node-webapp.sh` and `debian-base.sh` now use generic names (`myapp-prod`, `app.example.com`) instead of real project and domain names.
-- Docs and help text no longer expose real infrastructure: public IPs became documentation-range placeholders (`203.0.113.x`), server names became generic (`pve1`, `pve2`, `web1`–`web4`, `example.com`), and `docs/hosting3-deployment-guide.md` was renamed to `docs/virtualmin-deployment-guide.md`. The Nextcloud and Vaultwarden DNS hints now print `<NPM_PUBLIC_IP>`.
+- Docs and help text no longer expose real infrastructure: public IPs became documentation-range placeholders (`203.0.113.x`), server names became generic (`pve1`, `pve2`, `web1`–`web4`, `example.com`), and the Virtualmin deployment guide was renamed to `docs/virtualmin-deployment-guide.md`. The Nextcloud and Vaultwarden DNS hints now print `<NPM_PUBLIC_IP>`.
+
+### Fixed
+- `deploy-proxmox-ssl.sh` stopped after the first successful host (`((success_count++))` under `set -e`).
+- `tests/test-radio-module.sh` aborted after its first check; failures are now counted and reported. The `container.sh` import check matches how the library actually sources `common.sh`.
 
 ### Known issues
-- `deploy-proxmox-ssl.sh` (host/IP list) and `rsync-certs-proxmox.sh` (`REMOTEHOST`) still contain real hostnames and public IPs as working defaults; they will move to example config files in a follow-up.
 - `docs/network-guide.md` links to a non-existent `containers.md`.
 
 ## [2.2.0] - 2026-10-14
@@ -34,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `containers` CLI category: `infrastack containers <debian-base|node-webapp|nextcloud|vaultwarden>` (2026-07-20).
 - `node-webapp` container script: Debian 13 LXC with Node.js (nvm), PM2 with systemd startup, MariaDB or PostgreSQL in Docker, and optional nginx for SPA frontends (2026-07-20).
-- `--hostname` flag for `debian-base.sh` to set custom FQDNs outside `tecnosoul.com.ar` (2026-06-23).
+- `--hostname` flag for `debian-base.sh` to set custom FQDNs outside the default domain (2026-06-23).
 - Vaultwarden container script and deploy guide (2026-02-26).
 - Nextcloud container script (Nextcloud apache + MariaDB + Redis on Docker, data on `hdd-pool`) and deploy guide (2026-02-26).
 - `CHANGELOG.md`.
@@ -59,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared libraries `container.sh`, `storage.sh` and `inventory.sh` in `scripts/lib/`.
 - Radio documentation and `MIGRATION.md` (RadioStack → InfraStack).
 - `tests/test-radio-module.sh`.
-- Container deployment scripts `debian-base.sh` and `virtualmin-host.sh`, the network config generator (`scripts/network/generate-config.sh`, which only generates rules and never applies them), `docs/network-guide.md` and `docs/hosting3-deployment-guide.md` (2026-01-20).
+- Container deployment scripts `debian-base.sh` and `virtualmin-host.sh`, the network config generator (`scripts/network/generate-config.sh`, which only generates rules and never applies them), `docs/network-guide.md` and the Virtualmin deployment guide (2026-01-20).
 
 ## [1.0.0] - 2026-01-02
 

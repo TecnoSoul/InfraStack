@@ -16,6 +16,7 @@ INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Source common library
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+load_container_defaults
 
 #=============================================================================
 # CONFIGURATION
@@ -25,9 +26,9 @@ source "$INFRASTACK_ROOT/scripts/lib/common.sh"
 DEFAULT_CORES=2
 DEFAULT_MEMORY=2048
 DEFAULT_ROOTFS_SIZE=16
-DEFAULT_NETWORK="192.168.2"
-DEFAULT_GATEWAY="192.168.2.1"
-DEFAULT_BRIDGE="vmbr1"
+DEFAULT_NETWORK="$CT_NETWORK"
+DEFAULT_GATEWAY="$CT_GATEWAY"
+DEFAULT_BRIDGE="$CT_BRIDGE"
 
 #=============================================================================
 # CONTAINER MANAGEMENT
@@ -42,7 +43,7 @@ DEFAULT_BRIDGE="vmbr1"
 #   $4 - memory (optional)
 #   $5 - ip_suffix (optional)
 #   $6 - privileged (optional, 0=unprivileged, 1=privileged)
-#   $7 - custom_hostname (optional, overrides <name>.tecnosoul.com.ar)
+#   $7 - custom_hostname (optional, overrides <name>.<INFRASTACK_DOMAIN>)
 create_debian_base_container() {
     local ctid=$1
     local name=$2
@@ -52,7 +53,7 @@ create_debian_base_container() {
     local privileged=${6:-0}
     local custom_hostname=${7:-""}
 
-    local hostname="${custom_hostname:-${name}.tecnosoul.com.ar}"
+    local hostname="${custom_hostname:-${name}.${INFRASTACK_DOMAIN}}"
     local ip_address="${DEFAULT_NETWORK}.${ip_suffix}"
     local swap=$((memory / 2))
     local unprivileged=1
@@ -87,18 +88,18 @@ create_debian_base_container() {
 
     # Create container
     log_step "Creating LXC container"
-    pct create "$ctid" local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
+    pct create "$ctid" "$CT_TEMPLATE" \
         --hostname "$hostname" \
         --description "InfraStack Debian Base - $name" \
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
-        --rootfs data:$DEFAULT_ROOTFS_SIZE \
+        --rootfs "${CT_ROOTFS_STORAGE}:${DEFAULT_ROOTFS_SIZE}" \
         --unprivileged $unprivileged \
         --features nesting=1 \
         --net0 name=eth0,bridge=$DEFAULT_BRIDGE,ip="${ip_address}/24",gw=$DEFAULT_GATEWAY \
-        --nameserver 8.8.8.8 \
-        --searchdomain tecnosoul.com.ar \
+        --nameserver "$CT_NAMESERVER" \
+        --searchdomain "${INFRASTACK_DOMAIN:-${hostname#*.}}" \
         --ostype debian \
         --start 0
 
@@ -249,7 +250,7 @@ Options:
     -c, --cores NUM         CPU cores (default: $DEFAULT_CORES)
     -m, --memory MB         Memory in MB (default: $DEFAULT_MEMORY)
     -p, --ip-suffix NUM     Last octet of IP (default: same as CTID)
-    --hostname FQDN         Custom hostname (default: <name>.tecnosoul.com.ar)
+    --hostname FQDN         Custom hostname (default: <name>.<INFRASTACK_DOMAIN>)
     --privileged            Create privileged container (default: unprivileged)
     -h, --help              Show this help message
 
@@ -313,6 +314,8 @@ main() {
 
     # Check root
     check_root
+
+    [[ -n "$CUSTOM_HOSTNAME" ]] || require_config INFRASTACK_DOMAIN "or pass --hostname"
 
     # Create container
     create_debian_base_container "$CTID" "$NAME" "$CORES" "$MEMORY" "$IP_SUFFIX" "$PRIVILEGED" "$CUSTOM_HOSTNAME"

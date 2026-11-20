@@ -17,7 +17,7 @@ Complete step-by-step guide for deploying web3 Virtualmin server on pve2 using I
 
 ## Prerequisites
 
-### 1. Venus.ts Host Ready
+### 1. pve2 Host Ready
 
 Verify pve2 is properly configured:
 
@@ -230,7 +230,7 @@ In Webmin/Virtualmin:
 2. **Configure**:
    - Zone Files Location: `/var/cache/bind`
    - Check configuration
-3. **Create/Verify Zones** for tecnosoul.com.ar
+3. **Create/Verify Zones** for example.com
 4. **Set as NS3**: Add NS record pointing to ns3.example.com
 
 ### Step 12: Join Virtualmin Cluster
@@ -324,8 +324,8 @@ systemctl start fail2ban
 **DNS**:
 ```bash
 # From external machine
-dig @203.0.113.10 tecnosoul.com.ar
-nslookup tecnosoul.com.ar 203.0.113.10
+dig @203.0.113.10 example.com
+nslookup example.com 203.0.113.10
 ```
 
 **Web**:

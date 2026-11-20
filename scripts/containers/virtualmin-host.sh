@@ -16,6 +16,7 @@ INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Source common library
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+load_container_defaults
 
 #=============================================================================
 # CONFIGURATION
@@ -25,9 +26,9 @@ source "$INFRASTACK_ROOT/scripts/lib/common.sh"
 DEFAULT_CORES=4
 DEFAULT_MEMORY=4096
 DEFAULT_ROOTFS_SIZE=32
-DEFAULT_NETWORK="192.168.2"
-DEFAULT_GATEWAY="192.168.2.1"
-DEFAULT_BRIDGE="vmbr1"
+DEFAULT_NETWORK="$CT_NETWORK"
+DEFAULT_GATEWAY="$CT_GATEWAY"
+DEFAULT_BRIDGE="$CT_BRIDGE"
 
 #=============================================================================
 # VIRTUALMIN DEPLOYMENT
@@ -48,7 +49,7 @@ deploy_virtualmin_host() {
     local memory=${4:-$DEFAULT_MEMORY}
     local ip_suffix=${5:-$ctid}
 
-    local hostname="${name}.tecnosoul.com.ar"
+    local hostname="${name}.${INFRASTACK_DOMAIN}"
     local ip_address="${DEFAULT_NETWORK}.${ip_suffix}"
     local swap=$((memory / 2))
 
@@ -80,18 +81,18 @@ deploy_virtualmin_host() {
 
     # Create privileged container
     log_step "Creating privileged LXC container"
-    pct create "$ctid" local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
+    pct create "$ctid" "$CT_TEMPLATE" \
         --hostname "$hostname" \
         --description "Virtualmin Hosting Server - $name" \
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
-        --rootfs data:$DEFAULT_ROOTFS_SIZE \
+        --rootfs "${CT_ROOTFS_STORAGE}:${DEFAULT_ROOTFS_SIZE}" \
         --unprivileged 0 \
         --features nesting=1 \
         --net0 name=eth0,bridge=$DEFAULT_BRIDGE,ip="${ip_address}/24",gw=$DEFAULT_GATEWAY \
-        --nameserver 8.8.8.8 \
-        --searchdomain tecnosoul.com.ar \
+        --nameserver "$CT_NAMESERVER" \
+        --searchdomain "${INFRASTACK_DOMAIN:-${hostname#*.}}" \
         --ostype debian \
         --start 0
 
@@ -396,6 +397,8 @@ main() {
 
     # Check root
     check_root
+
+    require_config INFRASTACK_DOMAIN "used for the container hostname"
 
     # Deploy container
     deploy_virtualmin_host "$CTID" "$NAME" "$CORES" "$MEMORY" "$IP_SUFFIX"

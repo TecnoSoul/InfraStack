@@ -1,4 +1,6 @@
 # Proxmox SSL Sync Configuration Example
+# Legacy per-script config. Prefer SSL_* settings in /etc/infrastack/infrastack.conf
+# (see configs/infrastack.conf.example); values here override those.
 
 # ===== Remote Certificate Source =====
 # For external servers:
@@ -10,8 +12,8 @@ REMOTEPORT=2200
 # REMOTEPORT=22
 
 # ===== Optional Overrides =====
-# REMOTEUSER="tecno"
-# REMOTEDIR=/home/tecno/
+# REMOTEUSER="certuser"
+# REMOTEDIR=/home/certuser/
 # LOCALDIR=/tmp/ssl-staging/
 # PROXMOX_CERT_DIR=/etc/pve/local
 # LOG_FILE=/var/log/ssl-cert-sync.log

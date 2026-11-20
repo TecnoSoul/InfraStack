@@ -33,6 +33,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+load_container_defaults
 
 #=============================================================================
 # DEFAULTS
@@ -41,9 +42,9 @@ source "$INFRASTACK_ROOT/scripts/lib/common.sh"
 DEFAULT_CORES=2
 DEFAULT_MEMORY=2048
 DEFAULT_ROOTFS_SIZE=20
-DEFAULT_NETWORK="192.168.2"
-DEFAULT_GATEWAY="192.168.2.1"
-DEFAULT_BRIDGE="vmbr1"
+DEFAULT_NETWORK="$CT_NETWORK"
+DEFAULT_GATEWAY="$CT_GATEWAY"
+DEFAULT_BRIDGE="$CT_BRIDGE"
 
 DEFAULT_NODE_VERSION=22
 DEFAULT_DB_TYPE=mariadb
@@ -53,7 +54,7 @@ DEFAULT_WITH_NGINX=true
 MARIADB_IMAGE="mariadb:11"
 POSTGRES_IMAGE="postgres:16"
 
-DEBIAN_TEMPLATE="local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
+DEBIAN_TEMPLATE="$CT_TEMPLATE"
 NVM_VERSION="v0.40.3"
 
 #=============================================================================
@@ -66,7 +67,7 @@ create_node_webapp_container() {
     local cores=${3:-$DEFAULT_CORES}
     local memory=${4:-$DEFAULT_MEMORY}
     local ip_suffix=${5:-$ctid}
-    local hostname=${6:-"${name}.tecnosoul.com.ar"}
+    local hostname=${6:-"${name}.${INFRASTACK_DOMAIN}"}
     local db_type=${7:-$DEFAULT_DB_TYPE}
     local db_name=${8:-$name}
     local node_version=${9:-$DEFAULT_NODE_VERSION}
@@ -136,12 +137,12 @@ _create_lxc() {
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
-        --rootfs "data:${DEFAULT_ROOTFS_SIZE}" \
+        --rootfs "${CT_ROOTFS_STORAGE}:${DEFAULT_ROOTFS_SIZE}" \
         --unprivileged 1 \
         --features "nesting=1" \
         --net0 "name=eth0,bridge=${DEFAULT_BRIDGE},ip=${ip_address}/24,gw=${DEFAULT_GATEWAY}" \
-        --nameserver 8.8.8.8 \
-        --searchdomain tecnosoul.com.ar \
+        --nameserver "$CT_NAMESERVER" \
+        --searchdomain "${INFRASTACK_DOMAIN:-${hostname#*.}}" \
         --ostype debian \
         --start 0
 
@@ -547,7 +548,7 @@ Resources:
     -p, --ip-suffix NUM         Last octet of IP      (default: same as CTID)
 
 Identity:
-    --hostname FQDN             Custom hostname        (default: <name>.tecnosoul.com.ar)
+    --hostname FQDN             Custom hostname        (default: <name>.<INFRASTACK_DOMAIN>)
 
 Stack:
     --db-type mariadb|postgres  Database engine        (default: ${DEFAULT_DB_TYPE})
@@ -632,7 +633,8 @@ main() {
 
     DB_NAME="${DB_NAME:-$NAME}"
     IP_SUFFIX="${IP_SUFFIX:-$CTID}"
-    CUSTOM_HOSTNAME="${CUSTOM_HOSTNAME:-${NAME}.tecnosoul.com.ar}"
+    [[ -n "$CUSTOM_HOSTNAME" ]] || require_config INFRASTACK_DOMAIN "or pass --hostname"
+    CUSTOM_HOSTNAME="${CUSTOM_HOSTNAME:-${NAME}.${INFRASTACK_DOMAIN}}"
 
     check_root
 

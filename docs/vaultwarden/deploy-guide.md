@@ -1,5 +1,5 @@
 # Vaultwarden - Guía de Despliegue
-## vault.tecnosoul.com.ar · CT211 · pve2
+## vault.example.com · CT211 · pve2
 
 ---
 
@@ -11,7 +11,7 @@ Internet
     ▼
 NPM CT200 (203.0.113.20)
     │  SSL termination (Let's Encrypt)
-    │  vault.tecnosoul.com.ar → 192.168.2.211:8080
+    │  vault.example.com → 192.168.2.211:8080
     ▼
 CT211 - Vaultwarden LXC (192.168.2.211)
     └── Docker: vaultwarden/server:latest → 127.0.0.1:8080 (localhost only)
@@ -69,8 +69,8 @@ chown -R 165534:165534 /hdd-pool/container-data/vaultwarden
 
 ```bash
 pct create 211 local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
-    --hostname vault.tecnosoul.com.ar \
-    --description "Vaultwarden - vault.tecnosoul.com.ar" \
+    --hostname vault.example.com \
+    --description "Vaultwarden - vault.example.com" \
     --cores 2 \
     --memory 512 \
     --swap 256 \
@@ -79,7 +79,7 @@ pct create 211 local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
     --features nesting=1,keyctl=1 \
     --net0 name=eth0,bridge=vmbr1,ip=192.168.2.211/24,gw=192.168.2.1 \
     --nameserver 8.8.8.8 \
-    --searchdomain tecnosoul.com.ar \
+    --searchdomain example.com \
     --ostype debian \
     --start 0
 
@@ -154,7 +154,7 @@ services:
     ports:
       - \"127.0.0.1:8080:80\"
     environment:
-      DOMAIN: https://vault.tecnosoul.com.ar
+      DOMAIN: https://vault.example.com
       ADMIN_TOKEN: REEMPLAZAR_CON_TOKEN
       SIGNUPS_ALLOWED: \"true\"
       INVITATIONS_ALLOWED: \"true\"
@@ -182,14 +182,14 @@ pct exec 211 -- docker ps
 
 ### DNS primero
 ```
-vault.tecnosoul.com.ar.  A  203.0.113.20
+vault.example.com.  A  203.0.113.20
 ```
 
 ### En NPM (http://203.0.113.20:81) → Add Proxy Host
 
 | Campo | Valor |
 |---|---|
-| Domain Names | `vault.tecnosoul.com.ar` |
+| Domain Names | `vault.example.com` |
 | Scheme | `http` |
 | Forward Hostname / IP | `192.168.2.211` |
 | Forward Port | `8080` |
@@ -208,7 +208,7 @@ vault.tecnosoul.com.ar.  A  203.0.113.20
 
 ### 1. Crear cuenta de usuario
 
-Ir a `https://vault.tecnosoul.com.ar` y crear la cuenta principal mientras el registro está abierto.
+Ir a `https://vault.example.com` y crear la cuenta principal mientras el registro está abierto.
 
 ### 2. Deshabilitar registro
 
@@ -225,7 +225,7 @@ pct exec 211 -- bash -c "cd /opt/vaultwarden && docker compose restart"
 
 ### 3. Verificar admin panel
 
-Acceder a `https://vault.tecnosoul.com.ar/admin` con el token guardado en
+Acceder a `https://vault.example.com/admin` con el token guardado en
 `/root/vaultwarden-credentials-ct211.txt`.
 
 ---
@@ -314,5 +314,5 @@ pct exec 211 -- sed -i 's/SIGNUPS_ALLOWED: "true"/SIGNUPS_ALLOWED: "false"/' \
 pct exec 211 -- bash -c "cd /opt/vaultwarden && docker compose restart"
 
 # Opción B: Invitación desde el admin panel
-# https://vault.tecnosoul.com.ar/admin → Users → Invite User
+# https://vault.example.com/admin → Users → Invite User
 ```

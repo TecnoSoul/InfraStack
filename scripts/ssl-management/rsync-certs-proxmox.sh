@@ -1,28 +1,38 @@
 #!/bin/bash
 ################################################################################
 # Script: rsync-certs-proxmox.sh
-# Description: Pull SSL certificates from hosting1.ts and deploy to Proxmox
+# Description: Pull SSL certificates from the certificate source host and deploy to Proxmox
 # Author: TecnoSoul Infrastructure Team
 # Repository: https://github.com/TecnoSoul/InfraStack
 #
-# Configuration:
-#   Create .rsync-certs-proxmox.conf in the same directory as this script
-#   See rsync-certs-proxmox.conf.example for options
+# Configuration (later sources win):
+#   1. /etc/infrastack/infrastack.conf: SSL_REMOTE_HOST, SSL_REMOTE_PORT,
+#      SSL_REMOTE_USER, SSL_CERT_DIR (see configs/infrastack.conf.example)
+#   2. .rsync-certs-proxmox.conf next to this script (legacy, still supported):
+#      REMOTEHOST, REMOTEPORT, REMOTEUSER, REMOTEDIR
 ################################################################################
 
 # ===== SCRIPT DIRECTORY DETECTION =====
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ===== DEFAULT CONFIGURATION =====
-# These can be overridden in .rsync-certs-proxmox.conf
+# Site-specific values have no defaults; they come from the config files below.
 
 LOCALDIR=/tmp/ssl-staging/
-REMOTEHOST=hosting1.tecnosoul.com.ar
-REMOTEPORT=2200
-REMOTEUSER="tecno"
-REMOTEDIR=/home/tecno/
 PROXMOX_CERT_DIR=/etc/pve/local
 LOG_FILE=/var/log/ssl-cert-sync.log
+
+INFRASTACK_CONF="${INFRASTACK_CONF:-${INFRASTACK_CONFIG:-/etc/infrastack/infrastack.conf}}"
+CONFIG_SOURCE="defaults"
+if [ -f "$INFRASTACK_CONF" ]; then
+    source "$INFRASTACK_CONF"
+    CONFIG_SOURCE="$INFRASTACK_CONF"
+fi
+
+REMOTEHOST="${SSL_REMOTE_HOST:-}"
+REMOTEPORT="${SSL_REMOTE_PORT:-22}"
+REMOTEUSER="${SSL_REMOTE_USER:-}"
+REMOTEDIR="${SSL_CERT_DIR:+${SSL_CERT_DIR%/}/}"
 
 # ===== COMMAND LINE OPTIONS =====
 SKIP_CONFIRM=0
@@ -56,11 +66,17 @@ done
 
 # ===== LOAD LOCAL CONFIG (if exists) =====
 CONFIG_FILE="$SCRIPT_DIR/.rsync-certs-proxmox.conf"
-CONFIG_SOURCE="defaults"
 
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
     CONFIG_SOURCE="$CONFIG_FILE"
+fi
+
+if [ -z "$REMOTEHOST" ] || [ -z "$REMOTEUSER" ] || [ -z "$REMOTEDIR" ]; then
+    echo "ERROR: certificate source not configured."
+    echo "Set SSL_REMOTE_HOST, SSL_REMOTE_USER and SSL_CERT_DIR in $INFRASTACK_CONF"
+    echo "(or REMOTEHOST, REMOTEUSER and REMOTEDIR in $CONFIG_FILE)."
+    exit 1
 fi
 
 # ===== DISPLAY CONFIGURATION =====
