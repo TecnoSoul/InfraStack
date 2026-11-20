@@ -261,10 +261,10 @@ Examples:
     $0 -i 101 -n monitoring -c 4 -m 4096
 
     # Custom hostname (e.g. for external-domain containers)
-    $0 -i 140 -n novacast --hostname cast.novamusic.online -c 2 -m 2048 -p 140
+    $0 -i 140 -n myservice --hostname svc.example.org -c 2 -m 2048 -p 140
 
     # Privileged container (for Virtualmin)
-    $0 -i 103 -n hosting3 -c 4 -m 4096 --privileged
+    $0 -i 103 -n web3 -c 4 -m 4096 --privileged
 
 What Gets Installed:
     • InfraStack toolkit (with all scripts and tools)

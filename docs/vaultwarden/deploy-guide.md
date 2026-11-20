@@ -1,5 +1,5 @@
 # Vaultwarden - Guía de Despliegue
-## vault.tecnosoul.com.ar · CT211 · venus.ts
+## vault.tecnosoul.com.ar · CT211 · pve2
 
 ---
 
@@ -9,7 +9,7 @@
 Internet
     │
     ▼
-NPM CT200 (15.235.57.208)
+NPM CT200 (203.0.113.20)
     │  SSL termination (Let's Encrypt)
     │  vault.tecnosoul.com.ar → 192.168.2.211:8080
     ▼
@@ -31,7 +31,7 @@ Storage (hdd-pool ZFS):
 ## Deploy automático con InfraStack (recomendado)
 
 ```bash
-# Desde venus.ts como root:
+# Desde pve2 como root:
 cd /root/InfraStack
 ./scripts/containers/vaultwarden.sh -i 211 -n vault
 ```
@@ -45,7 +45,7 @@ Después del script, ir directo a [NPM: Configurar Proxy Host](#npm-configurar-p
 
 ## Deploy manual paso a paso
 
-### Fase 1: Crear ZFS Dataset (en venus.ts host)
+### Fase 1: Crear ZFS Dataset (en pve2 host)
 
 ```bash
 # Crear dataset con recordsize pequeño (SQLite se beneficia de bloques chicos)
@@ -182,10 +182,10 @@ pct exec 211 -- docker ps
 
 ### DNS primero
 ```
-vault.tecnosoul.com.ar.  A  15.235.57.208
+vault.tecnosoul.com.ar.  A  203.0.113.20
 ```
 
-### En NPM (http://15.235.57.208:81) → Add Proxy Host
+### En NPM (http://203.0.113.20:81) → Add Proxy Host
 
 | Campo | Valor |
 |---|---|
@@ -259,7 +259,7 @@ du -sh /mnt/vaultwarden-data/
 ## Backup
 
 ```bash
-# Backup completo del CT (desde venus host)
+# Backup completo del CT (desde pve2 host)
 vzdump 211 --storage hdd-backups --compress zstd --mode snapshot
 
 # Snapshot ZFS del dataset (antes de updates)
@@ -286,7 +286,7 @@ ls -la /mnt/vaultwarden-data/
 # Deben ser del usuario nobody (uid 65534 dentro del CT)
 ```
 
-**Error de permisos en /mnt/vaultwarden-data (desde venus HOST):**
+**Error de permisos en /mnt/vaultwarden-data (desde pve2 HOST):**
 ```bash
 chown -R 165534:165534 /hdd-pool/container-data/vaultwarden
 ```

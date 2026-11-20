@@ -292,7 +292,7 @@ services:
       SIGNUPS_ALLOWED: \"true\"
 
       # Email notifications (configure after setup if needed)
-      # SMTP_HOST: mail.tecnosoul.com.ar
+      # SMTP_HOST: mail.example.com
       # SMTP_PORT: 587
       # SMTP_SECURITY: starttls
       # SMTP_USERNAME: noreply@tecnosoul.com.ar
@@ -350,7 +350,7 @@ display_vaultwarden_summary() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "1. DNS Record:"
-    echo "   ${VW_DOMAIN}.  A  15.235.57.208"
+    echo "   ${VW_DOMAIN}.  A  <NPM_PUBLIC_IP>"
     echo ""
     echo "2. NPM (CT200) - Add Proxy Host:"
     echo "   Domain:        ${VW_DOMAIN}"

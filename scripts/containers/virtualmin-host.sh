@@ -37,7 +37,7 @@ DEFAULT_BRIDGE="vmbr1"
 # Purpose: Create Virtualmin hosting server
 # Parameters:
 #   $1 - ctid
-#   $2 - name (e.g., "hosting3")
+#   $2 - name (e.g., "web3")
 #   $3 - cores (optional)
 #   $4 - memory (optional)
 #   $5 - ip_suffix (optional)
@@ -288,7 +288,7 @@ display_virtualmin_next_steps() {
     echo "3. After installation completes:"
     echo "   - Access: https://$ip_address:10000"
     echo "   - Complete web setup wizard"
-    echo "   - Configure as ns3.tecnosoul.com.ar"
+    echo "   - Configure as ns3.example.com"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "DNS Configuration Required"
@@ -297,7 +297,7 @@ display_virtualmin_next_steps() {
     echo "Before running Virtualmin installer, configure DNS:"
     echo ""
     echo "  $hostname.     A    $ip_address"
-    echo "  ns3.tecnosoul.com.ar.   A    $ip_address"
+    echo "  ns3.example.com.   A    $ip_address"
     echo ""
     echo "Or use Proxmox host's public IP with port forwarding."
     echo ""
@@ -305,11 +305,11 @@ display_virtualmin_next_steps() {
     echo "Post-Installation Tasks"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "• Join Virtualmin cluster with hosting1 and hosting2"
+    echo "• Join Virtualmin cluster with web1 and web2"
     echo "• Configure DNS cluster"
     echo "• Set up SSL certificates (Let's Encrypt or via NPM)"
     echo "• Configure mail server (if needed)"
-    echo "• Migrate domains from old hosting3 (if applicable)"
+    echo "• Migrate domains from old web3 (if applicable)"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -327,18 +327,18 @@ Usage: $0 [OPTIONS]
 
 Options:
     -i, --ctid ID           Container ID (required)
-    -n, --name NAME         Server name (required, e.g., "hosting3")
+    -n, --name NAME         Server name (required, e.g., "web3")
     -c, --cores NUM         CPU cores (default: $DEFAULT_CORES)
     -m, --memory MB         Memory in MB (default: $DEFAULT_MEMORY)
     -p, --ip-suffix NUM     Last octet of IP (default: same as CTID)
     -h, --help              Show this help message
 
 Examples:
-    # Deploy hosting3
-    $0 -i 103 -n hosting3
+    # Deploy web3
+    $0 -i 103 -n web3
 
     # Custom resources for larger hosting
-    $0 -i 103 -n hosting3 -c 8 -m 8192
+    $0 -i 103 -n web3 -c 8 -m 8192
 
 What Gets Deployed:
     • Privileged LXC container (required for Virtualmin)

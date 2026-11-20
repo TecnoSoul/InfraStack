@@ -8,21 +8,21 @@ Automatically pulls wildcard SSL certificates from a central Virtualmin server a
 
 ### Architecture
 ```
-hosting1.ts (Certificate Source)
+web1 (Certificate Source)
    └── /home/tecno/ssl.*
         ↑ Wildcard cert managed by Virtualmin
         ↑ Auto-renewed by Let's Encrypt
         ↑
-        ├─── rsync ← marte.ts (Proxmox host 1)
+        ├─── rsync ← pve1 (Proxmox host 1)
         │              └── restart pveproxy
         │
-        └─── rsync ← venus.ts (Proxmox host 2)
+        └─── rsync ← pve2 (Proxmox host 2)
                        └── restart pveproxy
 ```
 
 ### Setup
 
-#### 1. On Certificate Source (hosting1.ts)
+#### 1. On Certificate Source (web1)
 
 Ensure wildcard certificate exists at:
 ```bash
@@ -45,7 +45,7 @@ nano scripts/ssl-management/.rsync-certs-proxmox.conf
 
 **For external Proxmox hosts:**
 ```bash
-REMOTEHOST=hosting1.tecnosoul.com.ar
+REMOTEHOST=web1.example.com
 REMOTEPORT=2200
 ```
 
@@ -104,7 +104,7 @@ All options can be overridden in `.rsync-certs-proxmox.conf`:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `REMOTEHOST` | hosting1.tecnosoul.com.ar | Certificate source hostname |
+| `REMOTEHOST` | web1.example.com | Certificate source hostname |
 | `REMOTEPORT` | 2200 | SSH port |
 | `REMOTEUSER` | tecno | SSH user |
 | `REMOTEDIR` | /home/tecno/ | Certificate directory on source |
