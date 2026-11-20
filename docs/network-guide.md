@@ -33,72 +33,72 @@ cp /etc/iptables/rules.v4 /etc/iptables/rules.v4.backup.$(date +%Y%m%d)
 
 ### Pattern 2: Virtualmin Hosting with Port Forwarding
 
-**Use case**: Virtualmin hosting servers (hosting3, hosting4, etc.)
+**Use case**: Virtualmin hosting servers (web3, web4, etc.)
 
 **Network**: Internal IP + port forwarding from Proxmox public IP
 
 **Required Proxmox host configuration**:
 
-#### On venus.ts (example for hosting3 at CT 103):
+#### On pve2 (example for web3 at CT 103):
 
 ```bash
 # Create port forwarding script
-nano /root/port-forward-hosting3.sh
+nano /root/port-forward-web3.sh
 ```
 
 ```bash
 #!/bin/bash
-# Port forwarding for hosting3 (CT 103)
+# Port forwarding for web3 (CT 103)
 # Internal IP: 192.168.2.103
-# Proxmox public IP: 51.79.77.238
+# Proxmox public IP: 203.0.113.10
 
 # SSH (external port 2203 -> CT103:22)
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 2203 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 2203 \
     -j DNAT --to-destination 192.168.2.103:22
 
 # Web traffic (80, 443)
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 80 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 80 \
     -j DNAT --to-destination 192.168.2.103:80
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 443 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 443 \
     -j DNAT --to-destination 192.168.2.103:443
 
 # DNS (53 TCP and UDP)
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p udp --dport 53 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p udp --dport 53 \
     -j DNAT --to-destination 192.168.2.103:53
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 53 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 53 \
     -j DNAT --to-destination 192.168.2.103:53
 
 # Mail ports (SMTP, Submission, IMAP, IMAPS, POP3, POP3S)
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 25 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 25 \
     -j DNAT --to-destination 192.168.2.103:25
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 587 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 587 \
     -j DNAT --to-destination 192.168.2.103:587
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 993 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 993 \
     -j DNAT --to-destination 192.168.2.103:993
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 995 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 995 \
     -j DNAT --to-destination 192.168.2.103:995
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 143 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 143 \
     -j DNAT --to-destination 192.168.2.103:143
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 110 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 110 \
     -j DNAT --to-destination 192.168.2.103:110
 
 # Webmin (10000)
-iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport 10000 \
+iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport 10000 \
     -j DNAT --to-destination 192.168.2.103:10000
 
 # Webmin RPC cluster communication (10001-10010)
 for port in {10001..10010}; do
-    iptables -t nat -A PREROUTING -d 51.79.77.238 -p tcp --dport $port \
+    iptables -t nat -A PREROUTING -d 203.0.113.10 -p tcp --dport $port \
         -j DNAT --to-destination 192.168.2.103:$port
 done
 
-echo "✓ Port forwarding configured for hosting3 (CT 103)"
+echo "✓ Port forwarding configured for web3 (CT 103)"
 ```
 
 **Make executable and run**:
 ```bash
-chmod +x /root/port-forward-hosting3.sh
-/root/port-forward-hosting3.sh
+chmod +x /root/port-forward-web3.sh
+/root/port-forward-web3.sh
 
 # Save rules permanently
 netfilter-persistent save
@@ -110,7 +110,7 @@ netfilter-persistent save
 iptables -t nat -L PREROUTING -n -v | grep 192.168.2.103
 
 # Test from external
-nmap -p 80,443,10000 51.79.77.238
+nmap -p 80,443,10000 203.0.113.10
 ```
 
 ### Pattern 3: Using Nginx Proxy Manager (Recommended for Web Services)
@@ -129,20 +129,20 @@ nmap -p 80,443,10000 51.79.77.238
 **Setup**:
 
 1. **NPM container** (CT 200) has both:
-   - Public IP: 15.235.57.208 (direct, no NAT)
+   - Public IP: 203.0.113.20 (direct, no NAT)
    - Internal IP: 192.168.2.200
 
-2. **Service containers** (hosting3, etc.) have only internal IPs
+2. **Service containers** (web3, etc.) have only internal IPs
 
 3. **NPM handles**:
    - SSL termination
    - Reverse proxy
    - Stream forwarding (for SSH, mail, etc.)
 
-**Example NPM configuration for hosting3**:
+**Example NPM configuration for web3**:
 
 **Proxy Host** (Web):
-- Domain: `hosting3.tecnosoul.com.ar`
+- Domain: `web3.example.com`
 - Scheme: `http`
 - Forward Hostname/IP: `192.168.2.103`
 - Forward Port: `80`
@@ -163,9 +163,9 @@ Maintain a consistent port allocation scheme across all Proxmox hosts:
 
 ### SSH Forwarding Ports (22XX range)
 ```
-2200 → VM100 (hosting1) - marte only
-2203 → CT103 (hosting3)
-2204 → CT104 (hosting4)
+2200 → VM100 (web1) - pve1 only
+2203 → CT103 (web3)
+2204 → CT104 (web4)
 2210-2219 → Utility containers
 2220-2229 → Development containers
 ```
@@ -191,7 +191,7 @@ Maintain a consistent port allocation scheme across all Proxmox hosts:
 
 ### Proxmox Host: /etc/network/interfaces
 
-**venus.ts example**:
+**pve2 example**:
 ```
 auto lo
 iface lo inet loopback
@@ -202,8 +202,8 @@ iface enp97s0f0 inet manual
 # Public bridge (vmbr0)
 auto vmbr0
 iface vmbr0 inet static
-    address 51.79.77.238/24
-    gateway 51.79.77.254
+    address 203.0.113.10/24
+    gateway 203.0.113.1
     bridge-ports enp97s0f0
     bridge-stp off
     bridge-fd 0
@@ -405,25 +405,25 @@ After deploying container:
 
 ## Examples by Proxmox Host
 
-### marte.ts (142.4.216.165)
+### pve1 (203.0.113.30)
 
 **Containers**:
-- VM100 (hosting1): Port forwarding for all web/mail services
+- VM100 (web1): Port forwarding for all web/mail services
 - CT200 (nginx-proxy): Has secondary public IP (192.99.215.100)
 
-**Network**: Similar to venus, but different IP ranges
+**Network**: Similar to pve2, but different IP ranges
 
-### venus.ts (51.79.77.238)
+### pve2 (203.0.113.10)
 
 **Containers**:
-- CT103 (hosting3): Port forwarding for web/mail
-- CT200 (NPM): Has secondary public IP (15.235.57.208)
+- CT103 (web3): Port forwarding for web/mail
+- CT200 (NPM): Has secondary public IP (203.0.113.20)
 
 **Network**: As documented above
 
 ## Related Documentation
 
-- [Virtualmin Deployment](virtualmin-deployment.md)
+- [Virtualmin Deployment](virtualmin-deployment-guide.md)
 - [SSL Certificate Management](ssl-management.md)
 - [Container Deployment](containers.md)
 

@@ -350,7 +350,7 @@ display_vaultwarden_summary() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "1. DNS Record:"
-    echo "   ${VW_DOMAIN}.  A  15.235.57.208"
+    echo "   ${VW_DOMAIN}.  A  <NPM_PUBLIC_IP>"
     echo ""
     echo "2. NPM (CT200) - Add Proxy Host:"
     echo "   Domain:        ${VW_DOMAIN}"

@@ -1,5 +1,5 @@
 # Nextcloud - Guía de Despliegue
-## nube.tecnosoul.com.ar · CT210 · venus.ts
+## nube.tecnosoul.com.ar · CT210 · pve2
 
 ---
 
@@ -9,7 +9,7 @@
 Internet
     │
     ▼
-NPM CT200 (15.235.57.208)
+NPM CT200 (203.0.113.20)
     │  SSL termination (Let's Encrypt)
     │  nube.tecnosoul.com.ar → 192.168.2.210:8080
     ▼
@@ -34,7 +34,7 @@ Storage (NVMe, disco raíz del CT, volúmenes Docker):
 ## Deploy automático con InfraStack (recomendado)
 
 ```bash
-# Desde venus.ts como root:
+# Desde pve2 como root:
 cd /root/InfraStack
 ./scripts/containers/nextcloud.sh -i 210 -n nube
 ```
@@ -64,7 +64,7 @@ Después del script, ir directo a [Fase 5: NPM](#fase-5-configurar-npm-ct200).
 
 ## Deploy manual paso a paso
 
-### Fase 1: Crear ZFS Dataset (en venus.ts host)
+### Fase 1: Crear ZFS Dataset (en pve2 host)
 
 ```bash
 # Crear dataset en hdd-pool
@@ -185,10 +185,10 @@ pct exec 210 -- docker compose -f /opt/nextcloud/docker-compose.yml logs -f next
 
 ### DNS primero
 ```
-nube.tecnosoul.com.ar.  A  15.235.57.208
+nube.tecnosoul.com.ar.  A  203.0.113.20
 ```
 
-### En NPM (http://15.235.57.208:81) → Add Proxy Host
+### En NPM (http://203.0.113.20:81) → Add Proxy Host
 
 | Campo | Valor |
 |---|---|
@@ -277,7 +277,7 @@ docker exec -u www-data nextcloud-app php occ files:scan --all
 ## Backup
 
 ```bash
-# Backup completo del CT (desde venus host)
+# Backup completo del CT (desde pve2 host)
 vzdump 210 --storage hdd-backups --compress zstd --mode snapshot
 
 # Snapshot ZFS del dataset de datos (antes de updates)

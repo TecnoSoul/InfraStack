@@ -1,29 +1,29 @@
-# Deploying hosting3.ts on venus.ts - Complete Guide
+# Deploying web3 on pve2 - Complete Guide
 
-Complete step-by-step guide for deploying hosting3 Virtualmin server on venus.ts using InfraStack.
+Complete step-by-step guide for deploying web3 Virtualmin server on pve2 using InfraStack.
 
 ## Overview
 
 **What we're deploying**:
-- Container: CT103 on venus.ts
-- Purpose: Virtualmin hosting server (ns3.tecnosoul.com.ar)
-- Replaces: Old hosting3 on jupiter.ts
-- Role: Part of 3-server Virtualmin cluster (hosting1, hosting2, hosting3)
+- Container: CT103 on pve2
+- Purpose: Virtualmin hosting server (ns3.example.com)
+- Replaces: Old web3 on old-host
+- Role: Part of 3-server Virtualmin cluster (web1, web2, web3)
 
 **Network Configuration**:
 - Internal IP: 192.168.2.103
-- Public Access: Via venus.ts public IP (51.79.77.238) with port forwarding
-- Gateway: 192.168.2.1 (venus.ts host)
+- Public Access: Via pve2 public IP (203.0.113.10) with port forwarding
+- Gateway: 192.168.2.1 (pve2 host)
 
 ## Prerequisites
 
 ### 1. Venus.ts Host Ready
 
-Verify venus.ts is properly configured:
+Verify pve2 is properly configured:
 
 ```bash
-# SSH to venus
-ssh root@51.79.77.238
+# SSH to pve2
+ssh root@203.0.113.10
 
 # Check IP forwarding
 sysctl net.ipv4.ip_forward
@@ -42,8 +42,8 @@ infrastack version
 Configure DNS **before** Virtualmin installation:
 
 ```
-hosting3.tecnosoul.com.ar.    A    51.79.77.238
-ns3.tecnosoul.com.ar.         A    51.79.77.238
+web3.example.com.    A    203.0.113.10
+ns3.example.com.         A    203.0.113.10
 ```
 
 Or use your domain provider's DNS management.
@@ -51,21 +51,21 @@ Or use your domain provider's DNS management.
 ### 3. InfraStack Updated
 
 ```bash
-# On venus.ts
+# On pve2
 cd /root/InfraStack
 git pull
 ```
 
 ## Phase 1: Deploy Container with InfraStack
 
-### Step 1: Create hosting3 Container
+### Step 1: Create web3 Container
 
 ```bash
-# On venus.ts
+# On pve2
 cd /root/InfraStack
 
 # Deploy Virtualmin-ready container
-sudo ./scripts/containers/virtualmin-host.sh -i 103 -n hosting3 -c 4 -m 4096
+sudo ./scripts/containers/virtualmin-host.sh -i 103 -n web3 -c 4 -m 4096
 ```
 
 **What this does**:
@@ -101,14 +101,14 @@ pct exec 103 -- infrastack version
 ### Step 3: Generate Port Forwarding Script
 
 ```bash
-# On venus.ts host (NOT inside container)
+# On pve2 host (NOT inside container)
 cd /root/InfraStack
 
 # Generate port forwarding configuration
 sudo ./scripts/network/generate-config.sh generate-forwarding \
     --ctid 103 \
     --type virtualmin \
-    --public-ip 51.79.77.238
+    --public-ip 203.0.113.10
 ```
 
 **Output**: `/root/port-forward-ct103.sh`
@@ -147,10 +147,10 @@ iptables -t nat -L PREROUTING -n -v | grep 192.168.2.103
 ```bash
 # From external machine (your workstation)
 # Test SSH access (should connect to container)
-ssh -p 2303 root@51.79.77.238
+ssh -p 2303 root@203.0.113.10
 
 # Test web access
-curl -I http://51.79.77.238
+curl -I http://203.0.113.10
 # Should get response from container (or 404 if nothing listening yet)
 ```
 
@@ -159,7 +159,7 @@ curl -I http://51.79.77.238
 ### Step 7: Enter Container
 
 ```bash
-# On venus.ts
+# On pve2
 pct enter 103
 ```
 
@@ -170,7 +170,7 @@ pct enter 103
 cd /root
 
 # Run installer
-./virtualmin-install.sh --hostname hosting3.tecnosoul.com.ar
+./virtualmin-install.sh --hostname web3.example.com
 ```
 
 **Installer prompts**:
@@ -205,7 +205,7 @@ tail -f /root/virtualmin-install.log
 exit
 
 # Access Webmin from your browser
-https://51.79.77.238:10000
+https://203.0.113.10:10000
 ```
 
 **Initial login**:
@@ -213,14 +213,14 @@ https://51.79.77.238:10000
 - Password: Your root password for CT103
 
 **Complete the post-installation wizard**:
-1. **Primary hostname**: hosting3.tecnosoul.com.ar
-2. **Primary IP**: 192.168.2.103 (internal) or 51.79.77.238 (public)
+1. **Primary hostname**: web3.example.com
+2. **Primary IP**: 192.168.2.103 (internal) or 203.0.113.10 (public)
 3. **DNS server**: Use as secondary nameserver (ns3)
 4. **MySQL/MariaDB password**: Set a strong password
 5. **Skip**: Virus scanning (optional)
 6. **Skip**: Spam filtering (optional for now)
 
-## Phase 4: Configure as ns3.tecnosoul.com.ar
+## Phase 4: Configure as ns3.example.com
 
 ### Step 11: Configure DNS Settings
 
@@ -231,14 +231,14 @@ In Webmin/Virtualmin:
    - Zone Files Location: `/var/cache/bind`
    - Check configuration
 3. **Create/Verify Zones** for tecnosoul.com.ar
-4. **Set as NS3**: Add NS record pointing to ns3.tecnosoul.com.ar
+4. **Set as NS3**: Add NS record pointing to ns3.example.com
 
 ### Step 12: Join Virtualmin Cluster
 
-**On hosting1 (or hosting2)**:
+**On web1 (or web2)**:
 
 1. **Webmin → Servers → Webmin Servers Index**
-2. **Add**: hosting3.tecnosoul.com.ar
+2. **Add**: web3.example.com
 3. **Configure**: Port 10000, SSL, root login
 4. **Test connection**
 
@@ -251,8 +251,8 @@ In Webmin/Virtualmin:
 
 **Webmin → Servers → BIND DNS Server → Cluster Servers**:
 
-1. Add hosting1.tecnosoul.com.ar
-2. Add hosting2.tecnosoul.com.ar
+1. Add web1.example.com
+2. Add web2.example.com
 3. Configure zone synchronization
 4. Test cluster sync
 
@@ -270,7 +270,7 @@ Server Configuration → SSL Certificate → Let's Encrypt
 **Option B: Use Nginx Proxy Manager**
 
 Configure NPM (CT200) to proxy:
-- `webmin.hosting3.tecnosoul.com.ar` → `192.168.2.103:10000`
+- `webmin.web3.example.com` → `192.168.2.103:10000`
 
 See [SSL Management Guide](ssl-management.md)
 
@@ -324,61 +324,61 @@ systemctl start fail2ban
 **DNS**:
 ```bash
 # From external machine
-dig @51.79.77.238 tecnosoul.com.ar
-nslookup tecnosoul.com.ar 51.79.77.238
+dig @203.0.113.10 tecnosoul.com.ar
+nslookup tecnosoul.com.ar 203.0.113.10
 ```
 
 **Web**:
 ```bash
-curl -I http://51.79.77.238
+curl -I http://203.0.113.10
 ```
 
 **Mail** (if configured):
 ```bash
-telnet 51.79.77.238 25
+telnet 203.0.113.10 25
 # Should connect to Postfix
 ```
 
 **Webmin**:
-- Access: https://51.79.77.238:10000
+- Access: https://203.0.113.10:10000
 - Should load Virtualmin interface
 
 ### Step 18: Create Test Virtual Server
 
 In Virtualmin:
 1. **Create Virtual Server**
-2. **Domain**: test.hosting3.tecnosoul.com.ar
+2. **Domain**: test.web3.example.com
 3. **Features**: Web, DNS, Mail
 4. **Create**
 
 Test the virtual server:
 ```bash
-curl http://test.hosting3.tecnosoul.com.ar
+curl http://test.web3.example.com
 ```
 
 ## Phase 7: Migration (Optional)
 
-### Step 19: Migrate Domains from Old hosting3
+### Step 19: Migrate Domains from Old web3
 
-If migrating from jupiter.ts:
+If migrating from old-host:
 
-**On old hosting3 (jupiter.ts)**:
+**On old web3 (old-host)**:
 ```bash
 # Create backup
 cd /root
 virtualmin backup-domain --all-domains --dest /root/backup-all-domains.tar.gz
 ```
 
-**Transfer to new hosting3**:
+**Transfer to new web3**:
 ```bash
-# From venus.ts host
+# From pve2 host
 scp -P 22 root@54.39.16.221:/root/backup-all-domains.tar.gz /tmp/
 
 # Copy to container
 pct push 103 /tmp/backup-all-domains.tar.gz /root/
 ```
 
-**On new hosting3 (CT103)**:
+**On new web3 (CT103)**:
 ```bash
 # Restore
 virtualmin restore-domain --all-domains --source /root/backup-all-domains.tar.gz
@@ -387,7 +387,7 @@ virtualmin restore-domain --all-domains --source /root/backup-all-domains.tar.gz
 ### Step 20: Update DNS Records
 
 For each migrated domain:
-1. Update NS records to include ns3.tecnosoul.com.ar
+1. Update NS records to include ns3.example.com
 2. Update DNS cluster configuration
 3. Test domain resolution
 
@@ -396,7 +396,7 @@ For each migrated domain:
 ### Container Can't Reach Internet
 
 ```bash
-# On venus.ts host
+# On pve2 host
 # Check IP forwarding
 sysctl net.ipv4.ip_forward
 
@@ -411,12 +411,12 @@ pct exec 103 -- ip route show
 ### Port Forwarding Not Working
 
 ```bash
-# On venus.ts host
+# On pve2 host
 # Verify rules exist
 iptables -t nat -L PREROUTING -n -v | grep 192.168.2.103
 
 # Test from external
-nmap -Pn 51.79.77.238 -p 80,443,10000
+nmap -Pn 203.0.113.10 -p 80,443,10000
 
 # Check Proxmox firewall
 pve-firewall status
@@ -457,7 +457,7 @@ iptables -L -n | grep 10000
 - [ ] Port forwarding configured and saved
 - [ ] Virtualmin installed successfully
 - [ ] Web setup wizard completed
-- [ ] DNS configured as ns3.tecnosoul.com.ar
+- [ ] DNS configured as ns3.example.com
 - [ ] Joined Virtualmin cluster
 - [ ] DNS cluster configured
 - [ ] SSL certificates installed
@@ -488,7 +488,7 @@ apt update && apt upgrade -y
 
 **Proxmox Container Backup**:
 ```bash
-# On venus.ts
+# On pve2
 vzdump 103 --compress zstd --mode snapshot --storage hdd-backups
 ```
 

@@ -197,7 +197,7 @@ infrastack containers nextcloud -i 210 -n nube -c 6 -m 8192
 infrastack containers vaultwarden -i 211 -n vault
 
 # Virtualmin hosting server (direct script)
-sudo ./scripts/containers/virtualmin-host.sh -i 103 -n hosting3 -c 4 -m 4096
+sudo ./scripts/containers/virtualmin-host.sh -i 103 -n web3 -c 4 -m 4096
 ```
 
 Common options for every container script: `-i <ctid>` (required), `-n <name>` (required), `-c <cores>`, `-m <memory_mb>`, `-p <ip_suffix>` (defaults to the CTID). Run any script with `-h` for its full option list.
@@ -212,7 +212,7 @@ Common options for every container script: `-i <ctid>` (required), `-n <name>` (
 
 Credentials generated during deployment are saved on the Proxmox host to `/root/<service>-credentials-ct<ctid>.txt` (chmod 600).
 
-See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md) and [hosting3 (Virtualmin)](docs/hosting3-deployment-guide.md) guides for details.
+See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md) and [web3 (Virtualmin)](docs/virtualmin-deployment-guide.md) guides for details.
 
 #### Network Configuration Generator
 
@@ -307,7 +307,7 @@ Detailed documentation is available in the `docs/` directory:
 ### Other Container Guides
 
 - [Vaultwarden Deploy Guide](docs/vaultwarden/deploy-guide.md)
-- [hosting3 (Virtualmin) Deployment Guide](docs/hosting3-deployment-guide.md)
+- [web3 (Virtualmin) Deployment Guide](docs/virtualmin-deployment-guide.md)
 
 ---
 
@@ -360,7 +360,7 @@ infrastack/
 ├── docs/
 │   ├── getting-started.md
 │   ├── network-guide.md
-│   ├── hosting3-deployment-guide.md
+│   ├── virtualmin-deployment-guide.md
 │   ├── tools/                 # setup, xdebug, ssl-management
 │   ├── nextcloud/             # Nextcloud module docs
 │   │   ├── deploy-guide.md

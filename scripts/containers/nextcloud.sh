@@ -46,7 +46,7 @@ NC_APP_PATH="/opt/nextcloud"
 # Nextcloud URL (used in docker-compose trusted_domains)
 NC_DOMAIN="nube.tecnosoul.com.ar"
 
-# Reverse proxy (NPM / venusproxy, CT200): trusted for X-Forwarded-For so
+# Reverse proxy (NPM / proxy, CT200): trusted for X-Forwarded-For so
 # Nextcloud sees the real client IP (brute-force throttling, logs)
 TRUSTED_PROXY="192.168.2.200"
 
@@ -474,7 +474,7 @@ display_nextcloud_summary() {
     echo "   SSL:           Let's Encrypt (force HTTPS)"
     echo ""
     echo "3. DNS Record:"
-    echo "   ${NC_DOMAIN}.  A  15.235.57.208"
+    echo "   ${NC_DOMAIN}.  A  <NPM_PUBLIC_IP>"
     echo ""
     echo "4. After NPM SSL is working, verify Nextcloud config:"
     echo "   pct exec ${ctid} -- docker exec nextcloud-app php occ config:system:get overwriteprotocol"
