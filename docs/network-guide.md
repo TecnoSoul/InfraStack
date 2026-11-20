@@ -409,7 +409,7 @@ After deploying container:
 
 **Containers**:
 - VM100 (web1): Port forwarding for all web/mail services
-- CT200 (nginx-proxy): Has secondary public IP (192.99.215.100)
+- CT200 (nginx-proxy): Has secondary public IP (203.0.113.31)
 
 **Network**: Similar to pve2, but different IP ranges
 

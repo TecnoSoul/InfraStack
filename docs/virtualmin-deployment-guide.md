@@ -372,7 +372,7 @@ virtualmin backup-domain --all-domains --dest /root/backup-all-domains.tar.gz
 **Transfer to new web3**:
 ```bash
 # From pve2 host
-scp -P 22 root@54.39.16.221:/root/backup-all-domains.tar.gz /tmp/
+scp -P 22 root@203.0.113.50:/root/backup-all-domains.tar.gz /tmp/
 
 # Copy to container
 pct push 103 /tmp/backup-all-domains.tar.gz /root/

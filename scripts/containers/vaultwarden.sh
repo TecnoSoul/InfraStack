@@ -292,7 +292,7 @@ services:
       SIGNUPS_ALLOWED: \"true\"
 
       # Email notifications (configure after setup if needed)
-      # SMTP_HOST: mail.tecnosoul.com.ar
+      # SMTP_HOST: mail.example.com
       # SMTP_PORT: 587
       # SMTP_SECURITY: starttls
       # SMTP_USERNAME: noreply@tecnosoul.com.ar
