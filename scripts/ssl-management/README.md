@@ -1,7 +1,6 @@
-ssl-management-README.md 
 # SSL Certificate Management
 
-Tools for managing SSL certificates across TecnoSoul infrastructure.
+Tools for managing SSL certificates across Proxmox hosts.
 
 ## deploy-proxmox-ssl.sh
 
@@ -15,13 +14,16 @@ Deploys wildcard SSL certificates from Virtualmin to Proxmox hosts.
 
 ### Configuration
 
-Edit the script to configure your Proxmox hosts:
+Set the certificate directory and target hosts in `/etc/infrastack/infrastack.conf`
+(see `configs/infrastack.conf.example`):
 ```bash
-declare -a PROXMOX_HOSTS=(
-    "hostname1:ip_address1"
-    "hostname2:ip_address2"
+SSL_CERT_DIR="/home/certuser"
+PROXMOX_HOSTS=(
+    "pve1.example.com:203.0.113.30"
+    "pve2.example.com:203.0.113.10"
 )
 ```
+The script exits with an error if either is missing.
 
 ### Usage
 ```bash
@@ -34,7 +36,7 @@ declare -a PROXMOX_HOSTS=(
 
 ### Certificate Source
 
-Certificates should be located at `/home/tecno/ssl.*`:
+Certificates should be located at `${SSL_CERT_DIR}/ssl.*`:
 - `ssl.cert` - Certificate file
 - `ssl.key` - Private key
 - `ssl.ca` - CA certificate
@@ -45,7 +47,7 @@ Deployment logs are written to `/var/log/proxmox-cert-deploy.log`
 
 ### Adding New Hosts
 
-Simply add new entries to the `PROXMOX_HOSTS` array in the script.
+Add entries to the `PROXMOX_HOSTS` array in `/etc/infrastack/infrastack.conf`.
 
 ### Troubleshooting
 

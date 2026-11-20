@@ -22,6 +22,7 @@ INFRASTACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Source common library
 source "$INFRASTACK_ROOT/scripts/lib/common.sh"
+load_container_defaults
 source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 
 #=============================================================================
@@ -31,24 +32,25 @@ source "$INFRASTACK_ROOT/scripts/lib/container.sh"
 DEFAULT_CORES=4
 DEFAULT_MEMORY=4096
 DEFAULT_ROOTFS_SIZE=32
-DEFAULT_NETWORK="192.168.2"
-DEFAULT_GATEWAY="192.168.2.1"
-DEFAULT_BRIDGE="vmbr1"
+DEFAULT_NETWORK="$CT_NETWORK"
+DEFAULT_GATEWAY="$CT_GATEWAY"
+DEFAULT_BRIDGE="$CT_BRIDGE"
 
-# ZFS dataset for Nextcloud data on hdd-pool
-HDD_POOL_BASE="/hdd-pool/container-data"
+# ZFS dataset for Nextcloud data (CT_DATA_BASE, default hdd-pool/container-data)
+HDD_POOL_BASE="/${CT_DATA_BASE}"
 NC_DATASET="nextcloud"
 NC_DATA_PATH="${HDD_POOL_BASE}/${NC_DATASET}"
 
 # App install path inside container
 NC_APP_PATH="/opt/nextcloud"
 
-# Nextcloud URL (used in docker-compose trusted_domains)
-NC_DOMAIN="nube.tecnosoul.com.ar"
+# Nextcloud URL (used in docker-compose trusted_domains).
+# Precedence: --domain, NEXTCLOUD_DOMAIN in infrastack.conf, <name>.<INFRASTACK_DOMAIN>
+NC_DOMAIN="${NEXTCLOUD_DOMAIN:-}"
 
-# Reverse proxy (NPM / proxy, CT200): trusted for X-Forwarded-For so
+# Reverse proxy (NPM, CT200): trusted for X-Forwarded-For so
 # Nextcloud sees the real client IP (brute-force throttling, logs)
-TRUSTED_PROXY="192.168.2.200"
+TRUSTED_PROXY="$PROXY_INTERNAL_IP"
 
 #=============================================================================
 # ZFS DATASET SETUP (on Proxmox host)
@@ -57,16 +59,16 @@ TRUSTED_PROXY="192.168.2.200"
 create_zfs_dataset() {
     local ctid=$1
 
-    log_step "Setting up ZFS dataset on hdd-pool"
+    log_step "Setting up ZFS dataset on ${CT_DATA_BASE%%/*}"
 
     # Create dataset if it doesn't exist
-    if ! zfs list "${HDD_POOL_BASE/\/hdd-pool\//hdd-pool/}/${NC_DATASET}" &>/dev/null 2>&1; then
+    if ! zfs list "${CT_DATA_BASE}/${NC_DATASET}" &>/dev/null 2>&1; then
         zfs create \
             -o recordsize=128k \
             -o atime=off \
             -o compression=lz4 \
-            "hdd-pool/container-data/${NC_DATASET}"
-        log_success "ZFS dataset created: hdd-pool/container-data/${NC_DATASET}"
+            "${CT_DATA_BASE}/${NC_DATASET}"
+        log_success "ZFS dataset created: ${CT_DATA_BASE}/${NC_DATASET}"
     else
         log_info "ZFS dataset already exists, skipping creation"
     fi
@@ -115,7 +117,7 @@ create_nextcloud_container() {
     local memory=${4:-$DEFAULT_MEMORY}
     local ip_suffix=${5:-$ctid}
 
-    local hostname="${name}.tecnosoul.com.ar"
+    local hostname="${name}.${INFRASTACK_DOMAIN}"
     local ip_address="${DEFAULT_NETWORK}.${ip_suffix}"
     local swap=$((memory / 2))
 
@@ -149,18 +151,18 @@ create_nextcloud_container() {
 
     # Step 2: Create LXC container (unprivileged, nesting for Docker)
     log_step "Creating LXC container"
-    pct create "$ctid" local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
+    pct create "$ctid" "$CT_TEMPLATE" \
         --hostname "$hostname" \
         --description "Nextcloud - ${NC_DOMAIN}" \
         --cores "$cores" \
         --memory "$memory" \
         --swap "$swap" \
-        --rootfs "data:${DEFAULT_ROOTFS_SIZE}" \
+        --rootfs "${CT_ROOTFS_STORAGE}:${DEFAULT_ROOTFS_SIZE}" \
         --unprivileged 1 \
         --features "nesting=1,keyctl=1" \
         --net0 "name=eth0,bridge=${DEFAULT_BRIDGE},ip=${ip_address}/24,gw=${DEFAULT_GATEWAY}" \
-        --nameserver 8.8.8.8 \
-        --searchdomain tecnosoul.com.ar \
+        --nameserver "$CT_NAMESERVER" \
+        --searchdomain "${INFRASTACK_DOMAIN:-${hostname#*.}}" \
         --ostype debian \
         --start 0
 
@@ -474,7 +476,7 @@ display_nextcloud_summary() {
     echo "   SSL:           Let's Encrypt (force HTTPS)"
     echo ""
     echo "3. DNS Record:"
-    echo "   ${NC_DOMAIN}.  A  <NPM_PUBLIC_IP>"
+    echo "   ${NC_DOMAIN}.  A  ${PROXY_PUBLIC_IP}"
     echo ""
     echo "4. After NPM SSL is working, verify Nextcloud config:"
     echo "   pct exec ${ctid} -- docker exec nextcloud-app php occ config:system:get overwriteprotocol"
@@ -502,8 +504,8 @@ Options:
     -c, --cores NUM         CPU cores (default: ${DEFAULT_CORES})
     -m, --memory MB         Memory in MB (default: ${DEFAULT_MEMORY})
     -p, --ip-suffix NUM     Last octet of IP (default: same as CTID)
-    --domain FQDN           Public domain (default: ${NC_DOMAIN})
-    --dataset NAME          ZFS dataset under hdd-pool/container-data (default: ${NC_DATASET})
+    --domain FQDN           Public domain (default: NEXTCLOUD_DOMAIN or <name>.<INFRASTACK_DOMAIN>)
+    --dataset NAME          ZFS dataset under ${CT_DATA_BASE} (default: ${NC_DATASET})
     --trusted-proxy IP      Reverse proxy IP (default: ${TRUSTED_PROXY})
     -h, --help              Show this help
 
@@ -520,7 +522,7 @@ Examples:
 What Gets Deployed:
     • Unprivileged LXC container (nesting=1 for Docker)
     • Root disk: ${DEFAULT_ROOTFS_SIZE}GB on NVMe (data pool)
-    • Data mount: hdd-pool/container-data/<dataset> → /mnt/nextcloud-data (user files + config)
+    • Data mount: ${CT_DATA_BASE}/<dataset> → /mnt/nextcloud-data (user files + config)
     • MariaDB and Redis use Docker volumes on the NVMe root disk
     • ZFS dataset created automatically with proper permissions
     • InfraStack + base packages + Zsh
@@ -528,9 +530,9 @@ What Gets Deployed:
     • Nextcloud (apache) + MariaDB 11 + Redis
 
 Network:
-    • Internal IP: 192.168.2.<ctid>
+    • Internal IP: ${CT_NETWORK}.<ctid>
     • Nextcloud port 8080 accessible from LAN (proxy via NPM)
-    • Public access via NPM CT200 → https://${NC_DOMAIN}
+    • Public access via NPM CT200 → https://<domain>
 
 EOF
     exit 0
@@ -568,6 +570,9 @@ main() {
     fi
 
     check_root
+
+    require_config INFRASTACK_DOMAIN "used for the container hostname"
+    NC_DOMAIN="${NC_DOMAIN:-${NAME}.${INFRASTACK_DOMAIN}}"
 
     # Recompute after option parsing (--dataset may have changed it)
     NC_DATA_PATH="${HDD_POOL_BASE}/${NC_DATASET}"

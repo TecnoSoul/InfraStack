@@ -1,5 +1,5 @@
 # Nextcloud - Guía de Despliegue
-## nube.tecnosoul.com.ar · CT210 · pve2
+## cloud.example.com · CT210 · pve2
 
 ---
 
@@ -11,7 +11,7 @@ Internet
     ▼
 NPM CT200 (203.0.113.20)
     │  SSL termination (Let's Encrypt)
-    │  nube.tecnosoul.com.ar → 192.168.2.210:8080
+    │  cloud.example.com → 192.168.2.210:8080
     ▼
 CT210 - Nextcloud LXC (192.168.2.210)
     ├── Docker: nextcloud:apache   → :8080 (localhost only)
@@ -46,7 +46,7 @@ Opciones adicionales (útiles para instancias de prueba aisladas):
 
 | Flag | Default | Descripción |
 |------|---------|-------------|
-| `--domain FQDN` | `nube.tecnosoul.com.ar` | Dominio público (trusted domain, overwrite*) |
+| `--domain FQDN` | `NEXTCLOUD_DOMAIN` o `<name>.<INFRASTACK_DOMAIN>` | Dominio público (trusted domain, overwrite*) |
 | `--dataset NAME` | `nextcloud` | Dataset bajo `hdd-pool/container-data/` |
 | `--trusted-proxy IP` | `192.168.2.200` | IP del reverse proxy (`TRUSTED_PROXIES`) |
 
@@ -89,8 +89,8 @@ chown -R 100033:100033 /hdd-pool/container-data/nextcloud/config
 
 ```bash
 pct create 210 local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
-    --hostname nube.tecnosoul.com.ar \
-    --description "Nextcloud - nube.tecnosoul.com.ar" \
+    --hostname cloud.example.com \
+    --description "Nextcloud - cloud.example.com" \
     --cores 4 \
     --memory 4096 \
     --swap 2048 \
@@ -99,7 +99,7 @@ pct create 210 local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
     --features nesting=1,keyctl=1 \
     --net0 name=eth0,bridge=vmbr1,ip=192.168.2.210/24,gw=192.168.2.1 \
     --nameserver 8.8.8.8 \
-    --searchdomain tecnosoul.com.ar \
+    --searchdomain example.com \
     --ostype debian \
     --start 0
 
@@ -185,14 +185,14 @@ pct exec 210 -- docker compose -f /opt/nextcloud/docker-compose.yml logs -f next
 
 ### DNS primero
 ```
-nube.tecnosoul.com.ar.  A  203.0.113.20
+cloud.example.com.  A  203.0.113.20
 ```
 
 ### En NPM (http://203.0.113.20:81) → Add Proxy Host
 
 | Campo | Valor |
 |---|---|
-| Domain Names | `nube.tecnosoul.com.ar` |
+| Domain Names | `cloud.example.com` |
 | Scheme | `http` |
 | Forward Hostname / IP | `192.168.2.210` |
 | Forward Port | `8080` |
@@ -304,7 +304,7 @@ docker volume inspect nextcloud-db
 **"Untrusted domain" al acceder:**
 ```bash
 docker exec -u www-data nextcloud-app php occ config:system:set \
-    trusted_domains 1 --value="nube.tecnosoul.com.ar"
+    trusted_domains 1 --value="cloud.example.com"
 ```
 
 **Warnings de salud en el panel de admin:**

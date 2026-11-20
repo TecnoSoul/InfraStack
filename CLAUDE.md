@@ -16,8 +16,9 @@ Target environments:
 # Syntax and structure validation (no Proxmox required)
 bash tests/test-radio-module.sh
 
-# Note: the test script currently aborts after its first PASS because
-# `((TESTS_PASSED++))` returns 1 under `set -e` when the counter is 0.
+# Check that no private data (real hosts, IPs, client names) is in tracked files.
+# Reads strings from the gitignored .private/patterns.txt; skips if absent.
+bash tests/check-private-data.sh
 
 # Syntax check a single script
 bash -n scripts/lib/common.sh
@@ -68,7 +69,7 @@ Mirrors the structure of the old RadioStack project. `platforms/deploy.sh` dispa
 infrastack containers node-webapp \
   -i <ctid>                    # ID del contenedor (requerido)
   -n <name>                    # Nombre de la app (requerido); usado para hostname, paths y DB name
-  --hostname <fqdn>            # Hostname custom (default: <name>.tecnosoul.com.ar)
+  --hostname <fqdn>            # Hostname custom (default: <name>.<INFRASTACK_DOMAIN>)
   -c <cores>                   # CPU cores (default: 2)
   -m <memory_mb>               # RAM en MB (default: 2048)
   -p <ip_suffix>               # Último octeto de IP (default: igual al CTID)
@@ -92,7 +93,7 @@ infrastack containers node-webapp -i 150 -n myapp-prod \
 ```bash
 ./scripts/containers/debian-base.sh \
   -i <ctid>            # ID del contenedor (requerido)
-  -n <name>            # Nombre base (requerido); hostname por defecto: <name>.tecnosoul.com.ar
+  -n <name>            # Nombre base (requerido); hostname por defecto: <name>.<INFRASTACK_DOMAIN>
   --hostname <fqdn>    # Sobreescribe el hostname (útil para dominios externos)
   -c <cores>           # CPU cores (default: 2)
   -m <memory_mb>       # RAM en MB (default: 2048)
@@ -129,7 +130,13 @@ New container scripts (e.g., `scripts/containers/nextcloud.sh`) follow this sequ
 
 ### Configuration
 
-Runtime config: `/etc/infrastack/infrastack.conf` (sourced by `infrastack.sh` at startup). Example at `configs/infrastack.conf.example`. Inventory file: `/etc/infrastack/inventory/stations.csv`.
+Runtime config: `/etc/infrastack/infrastack.conf` (path overridable with `INFRASTACK_CONFIG`, exported by `infrastack.sh`). Example at `configs/infrastack.conf.example`. Inventory file: `/etc/infrastack/inventory/stations.csv`.
+
+- Container scripts call `load_container_defaults` (in `common.sh`) right after sourcing `common.sh`. It loads the config and sets `CT_NETWORK`, `CT_GATEWAY`, `CT_BRIDGE`, `CT_NAMESERVER`, `CT_TEMPLATE`, `CT_ROOTFS_STORAGE`, `CT_DATA_BASE`, `PROXY_INTERNAL_IP`, `PROXY_PUBLIC_IP` with the defaults listed under *Network and storage conventions*.
+- `INFRASTACK_DOMAIN` has no default. Scripts call `require_config INFRASTACK_DOMAIN` (unless `--hostname` is given) so a missing value fails with a clear message.
+- Service domains: `--domain` > `NEXTCLOUD_DOMAIN` / `VAULTWARDEN_DOMAIN` > `<name>.<INFRASTACK_DOMAIN>`.
+- SSL scripts read `SSL_CERT_DIR`, `SSL_REMOTE_HOST/PORT/USER` and `PROXMOX_HOSTS` from the same file; `rsync-certs-proxmox.sh` still honors the legacy `.rsync-certs-proxmox.conf`.
+- Never hard-code site-specific values (domains, public IPs, hostnames, users) in scripts or docs. Use the config, and `example.com` / `203.0.113.x` in examples. Real values live only in the gitignored `.private/` directory.
 
 ## Changelog
 
