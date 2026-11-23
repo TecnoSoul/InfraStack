@@ -10,6 +10,9 @@
 #   local  → ollama             modelos locales en CPU
 #   chat   → open-webui         chat interno sobre el mismo gateway
 #   queue  → redis + n8n-worker si algún día hace falta escalar
+#
+# Acceso: profile "tunnel" (Cloudflare Tunnel + Access, recomendado) o un
+# reverse proxy como NPM. Se elige con COMPOSE_PROFILES en .env.
 # =============================================================================
 
 name: n8n-ai
@@ -51,7 +54,7 @@ services:
       <<: *n8n-db
       # Sin esta clave no se pueden descifrar las credenciales guardadas: va a Vaultwarden
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
-      # URL pública (detrás de NPM)
+      # URL pública (detrás de Cloudflare Tunnel o de NPM)
       N8N_HOST: ${N8N_HOST}
       N8N_PROTOCOL: ${N8N_PROTOCOL}
       N8N_EDITOR_BASE_URL: ${N8N_PUBLIC_URL}
@@ -70,10 +73,11 @@ services:
       EXECUTIONS_DATA_PRUNE: "true"
       EXECUTIONS_DATA_MAX_AGE: 336        # horas (14 días de historial)
       EXECUTIONS_TIMEOUT: 300             # segundos: corta cualquier ejecución colgada
-      # Métricas Prometheus en /metrics (bloquearlo en NPM, ver README)
+      # Métricas Prometheus en /metrics (no publicarlo sin auth, ver README)
       N8N_METRICS: "true"
     ports:
-      # NPM (otro CT) tiene que llegar a este puerto por la red interna
+      # Con tunnel: 127.0.0.1 (cloudflared llega por la red del compose).
+      # Con NPM: 0.0.0.0 + firewall para que solo llegue NPM.
       - "${N8N_BIND_ADDR}:5678:5678"
     volumes:
       - n8n_storage:/home/node/.n8n
@@ -95,6 +99,21 @@ services:
       N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
     depends_on:
       - n8n
+    networks: [internal]
+
+  # Cloudflare Tunnel: conexión saliente hacia Cloudflare, sin puertos abiertos.
+  # El hostname público y la política de Access se configuran en el panel de
+  # Cloudflare Zero Trust; acá solo va el token (en .env).
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION}
+    profiles: [tunnel]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      n8n:
+        condition: service_healthy
     networks: [internal]
 
 volumes:

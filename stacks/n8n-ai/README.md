@@ -24,7 +24,7 @@ que se usan hoy al integrar IA en proyectos.
 - LXC Debian 13 **no privilegiado** con `nesting=1,keyctl=1` y Docker
   (mismo patrón que `scripts/containers/vaultwarden.sh`).
 - ~2 GB de RAM y 20 GB de disco para la fase 0.
-- NPM (u otro reverse proxy) con HTTPS delante.
+- Acceso: Cloudflare Tunnel + Access (recomendado, ver abajo) o NPM con HTTPS delante.
 
 ## Levantar
 
@@ -33,8 +33,14 @@ que se usan hoy al integrar IA en proyectos.
 Desde el host Proxmox, con `INFRASTACK_DOMAIN` (o `N8N_DOMAIN`) en `/etc/infrastack/infrastack.conf`:
 
 ```bash
+# Con Cloudflare Tunnel (recomendado): el token en un archivo, nunca como argumento
+install -m 600 /dev/null /root/n8n-tunnel.token && nano /root/n8n-tunnel.token
+infrastack containers n8n-ai -i 220 -n n8n --domain n8n.example.com \
+  --tunnel-token-file /root/n8n-tunnel.token
+
+# Con NPM
 infrastack containers n8n-ai -i 220 -n n8n
-# opcional: --domain n8n.example.com --n8n-version <tag> -c 2 -m 2048
+# opcional en ambos: --n8n-version <tag> -c 2 -m 2048
 ```
 
 Crea el CT, instala Docker, copia este directorio a `/opt/n8n-ai`, genera `.env`, levanta el
@@ -44,7 +50,8 @@ stack y deja una copia de los secretos en `/root/n8n-ai-credentials-ct<ctid>.txt
 
 ```bash
 cp -r stacks/n8n-ai /opt/n8n-ai && cd /opt/n8n-ai   # fuera del checkout: .env no se versiona
-scripts/gen-env.sh --host n8n.example.com
+scripts/gen-env.sh --host n8n.example.com                 # modo NPM
+# o: scripts/gen-env.sh --host n8n.example.com --tunnel-token-file /ruta/al/token
 # Revisar .env: N8N_VERSION (fijar la última estable), y guardar N8N_ENCRYPTION_KEY en Vaultwarden
 docker compose up -d
 docker compose ps                        # postgres y n8n deben quedar "healthy"
@@ -59,10 +66,42 @@ Primera vez sin proxy, para probar desde la LAN: `N8N_SECURE_COOKIE=false` y ent
 Al entrar por primera vez, n8n pide crear la cuenta *owner*: hacerlo enseguida
 (quien llegue primero se queda con la instancia) y activar 2FA en *Settings → Personal*.
 
-## NPM
+## Acceso
+
+### Opción A (recomendada): Cloudflare Tunnel + Access
+
+El contenedor `cloudflared` (profile `tunnel`) abre una conexión **saliente** hacia Cloudflare:
+no hay puertos abiertos, n8n queda atado a `127.0.0.1` y, antes de llegar al editor,
+Cloudflare Access pide login (código por mail, Google, GitHub…). Funciona desde cualquier IP,
+sin VPN. Requiere que el dominio tenga el DNS en Cloudflare; el plan gratuito de Zero Trust alcanza
+para equipos chicos.
+
+1. **Crear el túnel**: Zero Trust → *Networks → Tunnels → Create a tunnel* → Cloudflared.
+   Copiar el token (la cadena larga del comando `cloudflared service install <token>`)
+   a un archivo con permisos 600. No hace falta instalar nada a mano: lo corre el compose.
+2. **Crear la aplicación de Access primero**: *Access → Applications → Add → Self-hosted*,
+   dominio `n8n.example.com`, política *Allow* con los mails del equipo. Hacerlo **antes** del
+   paso 3 para que el hostname nunca quede publicado sin login.
+3. **Publicar el hostname**: en el túnel → *Public hostname* → `n8n.example.com` →
+   servicio `http://n8n:5678`. Cloudflare crea el registro DNS.
+4. Levantar el stack (`gen-env.sh --tunnel-token-file …` o el script de InfraStack) y revisar
+   `docker compose logs cloudflared`: tiene que mostrar conexiones registradas.
+
+Notas:
+
+- Usar subdominios de **primer nivel** (`n8n.example.com`, no `n8n.ops.example.com`):
+  el certificado gratuito de Cloudflare cubre solo ese nivel.
+- Cloudflare termina TLS en su borde y ve el tráfico del editor. Para una herramienta interna
+  es aceptable, pero es una decisión de privacidad: tenerla presente.
+- Access protege todas las rutas, `/metrics` incluido. Para webhooks públicos (formularios, etc.)
+  se publica más adelante otro hostname (`hooks.example.com`) con una política *Bypass* limitada
+  a `/webhook/*`, y `WEBHOOK_URL` apuntando a él.
+- Salir de Cloudflare es reversible: vaciar `COMPOSE_PROFILES`, `N8N_BIND_ADDR=0.0.0.0` y usar la opción B.
+
+### Opción B: NPM (u otro reverse proxy)
 
 - Proxy host `n8n.example.com` → `http://<ip-del-ct>:5678`, Websockets **on**, SSL Let's Encrypt.
-- **Access list**: solo las IPs del equipo (mientras no haya VPN o Cloudflare Access).
+- **Access list**: solo las IPs del equipo.
 - En *Advanced*, no exponer las métricas:
 
   ```nginx

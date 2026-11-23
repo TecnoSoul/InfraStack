@@ -212,7 +212,7 @@ Common options for every container script: `-i <ctid>` (required), `-n <name>` (
 | `node-webapp` | 2 / 2048 MB / 20 GB | `--hostname`, `--db-type mariadb\|postgres`, `--db-name`, `--node-version` (22), `--app-port` (3000), `--no-nginx` |
 | `nextcloud` | 4 / 4096 MB / 32 GB | `--domain`, `--dataset`, `--trusted-proxy` |
 | `vaultwarden` | 2 / 512 MB / 8 GB | — |
-| `n8n-ai` | 2 / 2048 MB / 20 GB | `--domain`, `--n8n-version` |
+| `n8n-ai` | 2 / 2048 MB / 20 GB | `--domain`, `--n8n-version`, `--tunnel-token-file` |
 | `virtualmin-host` | 4 / 4096 MB / 32 GB | — |
 
 Credentials generated during deployment are saved on the Proxmox host to `/root/<service>-credentials-ct<ctid>.txt` (chmod 600).
