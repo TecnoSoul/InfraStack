@@ -126,7 +126,7 @@ New container scripts (e.g., `scripts/containers/nextcloud.sh`) follow this sequ
 - Root disk: NVMe pool (`data:`) — size in GB specified directly
 - User data: `hdd-pool/container-data/<service>` (ZFS, mounted at `/mnt/<service>-data`)
 - Unprivileged UID mapping: host UID = container UID + 100000 (e.g., www-data uid 33 → host uid 100033)
-- SSL proxy: NPM at CT200; public DNS → NPM → internal container port
+- SSL proxy: NPM at CT200; public DNS → NPM → internal container port. Exception: `n8n-ai` with `--tunnel-token-file` uses Cloudflare Tunnel + Access instead (no NPM, service bound to `127.0.0.1`, hostname and Access policy configured in the Cloudflare dashboard)
 - Credentials generated on deployment are saved to `/root/<service>-credentials-ct<ctid>.txt` (chmod 600) on the Proxmox host
 
 ### Configuration

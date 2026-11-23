@@ -34,13 +34,13 @@ InfraStack is a collection of battle-tested scripts and tools for managing Debia
   - Inventory tracking and bulk operations
 
 ### Container Deployment (Proxmox VE)
-All container scripts create an unprivileged Debian LXC (unless noted) on `vmbr1` (`192.168.2.0/24`), with InfraStack, base packages and Zsh preinstalled. Public SSL is handled by NPM (CT200).
+All container scripts create an unprivileged Debian LXC (unless noted) on `vmbr1` (`192.168.2.0/24`), with InfraStack, base packages and Zsh preinstalled. Public SSL is handled by NPM (CT200), except where a script offers Cloudflare Tunnel (currently `n8n-ai`).
 
 - **debian-base**: Generic Debian container — starting point for any service without its own script. Supports `--hostname` for external FQDNs and `--privileged`.
 - **node-webapp**: Node.js (nvm) + PM2 (systemd) + MariaDB/PostgreSQL in Docker + optional nginx for SPA frontends.
 - **nextcloud**: Nextcloud (apache) + MariaDB + Redis + Cron on Docker; user files and config on a ZFS dataset in `hdd-pool`, MariaDB/Redis on NVMe Docker volumes.
 - **vaultwarden**: Vaultwarden (Bitwarden-compatible) on Docker, data on `hdd-pool`.
-- **n8n-ai**: [n8n](https://n8n.io) workflow automation + external task runner + PostgreSQL (pgvector) on Docker, deployed from [`stacks/n8n-ai`](stacks/n8n-ai/README.md). Starting point for automations that call AI models through an API.
+- **n8n-ai**: [n8n](https://n8n.io) workflow automation + external task runner + PostgreSQL (pgvector) on Docker, deployed from [`stacks/n8n-ai`](stacks/n8n-ai/README.md). Access through Cloudflare Tunnel + Access (recommended: no open ports, login in front of the editor) or through NPM. Starting point for automations that call AI models through an API.
 - **virtualmin-host**: Virtualmin shared-hosting container (direct script only, not yet wired into the CLI).
 
 ---
@@ -217,7 +217,7 @@ Common options for every container script: `-i <ctid>` (required), `-n <name>` (
 
 Credentials generated during deployment are saved on the Proxmox host to `/root/<service>-credentials-ct<ctid>.txt` (chmod 600).
 
-See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md), [n8n-ai](stacks/n8n-ai/README.md) and [web3 (Virtualmin)](docs/virtualmin-deployment-guide.md) guides for details.
+See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md), [n8n-ai](docs/n8n-ai/deploy-guide.md) and [web3 (Virtualmin)](docs/virtualmin-deployment-guide.md) guides for details.
 
 #### Network Configuration Generator
 
@@ -314,6 +314,11 @@ Detailed documentation is available in the `docs/` directory:
 - [Storage Configuration](docs/radio/storage-configuration.md)
 - [Quick Reference](docs/radio/quick-reference.md)
 - [Migration from RadioStack](MIGRATION.md)
+
+### n8n-ai Documentation
+
+- [n8n-ai Deploy Guide](docs/n8n-ai/deploy-guide.md) (Cloudflare Tunnel + Access or NPM)
+- [Stack README](stacks/n8n-ai/README.md): operations, phases and first practice workflow
 
 ### Nextcloud Documentation
 
