@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `stacks/` directory for versioned Docker Compose stacks, starting with `stacks/n8n-ai`: n8n + external task runner + PostgreSQL 18 with pgvector, `.env.example`, `scripts/gen-env.sh` (random secrets, never overwrites an existing `.env`) and a README with operations notes and a first practice workflow.
+- `n8n-ai.sh` container script and `infrastack containers n8n-ai`: unprivileged LXC with Docker, copies the stack to `/opt/n8n-ai`, generates `.env`, starts the stack, waits for `/healthz` and saves the secrets to `/root/n8n-ai-credentials-ct<ctid>.txt` on the Proxmox host. Flags: `--domain`, `--n8n-version`.
+- `N8N_DOMAIN` setting in `configs/infrastack.conf.example`.
+
 ## [3.0.0] - 2026-11-23
 
 ### Upgrading from 2.x

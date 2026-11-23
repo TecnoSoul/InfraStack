@@ -62,6 +62,7 @@ Mirrors the structure of the old RadioStack project. `platforms/deploy.sh` dispa
 | `node-webapp.sh` | Node.js (nvm) + PM2 nativo + DB en Docker (MariaDB o PostgreSQL) + nginx opcional para SPA. Stack genérico para backends/fullstack JS. |
 | `nextcloud.sh` | Nextcloud (apache) + MariaDB + Redis sobre Docker, con dataset ZFS en `hdd-pool`. |
 | `vaultwarden.sh` | Vaultwarden (Bitwarden-compatible) sobre Docker. |
+| `n8n-ai.sh` | Despliega `stacks/n8n-ai` (n8n + task runner + PostgreSQL con pgvector) sobre Docker. El stack se copia a `/opt/n8n-ai` dentro del CT; `.env` se genera ahí y nunca entra al repo. |
 | `virtualmin-host.sh` | Contenedor Virtualmin para hosting compartido (requiere `--privileged`). |
 
 **`node-webapp.sh` flags:**
