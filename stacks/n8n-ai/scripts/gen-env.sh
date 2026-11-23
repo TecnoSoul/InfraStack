@@ -4,7 +4,12 @@
 # Genera .env a partir de .env.example reemplazando cada __GENERATE__ por un
 # secreto aleatorio. No pisa un .env existente.
 #
-# Uso: scripts/gen-env.sh [--host n8n.midominio.com]
+# Uso: scripts/gen-env.sh [--host n8n.midominio.com] [--tunnel-token-file FILE]
+#
+#   --tunnel-token-file FILE  Activa Cloudflare Tunnel (COMPOSE_PROFILES=tunnel,
+#                             n8n atado a 127.0.0.1) con el token leído de FILE.
+#                             Con "-" lo lee de stdin. Nunca pasar el token como
+#                             argumento: quedaría en el historial y en ps.
 #=============================================================================
 set -euo pipefail
 
@@ -12,11 +17,13 @@ STACK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXAMPLE="$STACK_DIR/.env.example"
 TARGET="$STACK_DIR/.env"
 HOST=""
+TOKEN_FILE=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --host) HOST="$2"; shift 2 ;;
-        -h|--help) sed -n '2,9p' "$0"; exit 0 ;;
+        --tunnel-token-file) TOKEN_FILE="$2"; shift 2 ;;
+        -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 1 ;;
     esac
 done
@@ -27,6 +34,21 @@ if [[ -f "$TARGET" ]]; then
 fi
 
 command -v openssl >/dev/null || { echo "Falta openssl" >&2; exit 1; }
+
+TOKEN=""
+if [[ -n "$TOKEN_FILE" ]]; then
+    if [[ "$TOKEN_FILE" == "-" ]]; then
+        IFS= read -r TOKEN || true
+    else
+        IFS= read -r TOKEN < "$TOKEN_FILE" || true
+    fi
+    TOKEN="${TOKEN//[[:space:]]/}"
+    # Los tokens de túnel son base64: cualquier otra cosa es un error de copiado
+    if [[ ! "$TOKEN" =~ ^[A-Za-z0-9+/=_-]{40,}$ ]]; then
+        echo "El token del túnel está vacío o no parece válido" >&2
+        exit 1
+    fi
+fi
 
 umask 077
 while IFS= read -r line; do
@@ -41,6 +63,15 @@ if [[ -n "$HOST" ]]; then
         -e "s|^N8N_HOST=.*|N8N_HOST=${HOST}|" \
         -e "s|^N8N_PUBLIC_URL=.*|N8N_PUBLIC_URL=https://${HOST}/|" \
         "$TARGET"
+fi
+
+if [[ -n "$TOKEN" ]]; then
+    sed -i \
+        -e "s|^COMPOSE_PROFILES=.*|COMPOSE_PROFILES=tunnel|" \
+        -e "s|^N8N_BIND_ADDR=.*|N8N_BIND_ADDR=127.0.0.1|" \
+        -e "s|^CLOUDFLARE_TUNNEL_TOKEN=.*|CLOUDFLARE_TUNNEL_TOKEN=${TOKEN}|" \
+        "$TARGET"
+    echo "Cloudflare Tunnel activado (COMPOSE_PROFILES=tunnel, n8n en 127.0.0.1)"
 fi
 
 echo "Listo: $TARGET (permisos 600)"
