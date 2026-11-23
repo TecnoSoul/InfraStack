@@ -40,6 +40,7 @@ All container scripts create an unprivileged Debian LXC (unless noted) on `vmbr1
 - **node-webapp**: Node.js (nvm) + PM2 (systemd) + MariaDB/PostgreSQL in Docker + optional nginx for SPA frontends.
 - **nextcloud**: Nextcloud (apache) + MariaDB + Redis + Cron on Docker; user files and config on a ZFS dataset in `hdd-pool`, MariaDB/Redis on NVMe Docker volumes.
 - **vaultwarden**: Vaultwarden (Bitwarden-compatible) on Docker, data on `hdd-pool`.
+- **n8n-ai**: [n8n](https://n8n.io) workflow automation + external task runner + PostgreSQL (pgvector) on Docker, deployed from [`stacks/n8n-ai`](stacks/n8n-ai/README.md). Starting point for automations that call AI models through an API.
 - **virtualmin-host**: Virtualmin shared-hosting container (direct script only, not yet wired into the CLI).
 
 ---
@@ -196,6 +197,9 @@ infrastack containers nextcloud -i 210 -n nube -c 6 -m 8192
 # Vaultwarden
 infrastack containers vaultwarden -i 211 -n vault
 
+# n8n + PostgreSQL (stacks/n8n-ai)
+infrastack containers n8n-ai -i 220 -n n8n
+
 # Virtualmin hosting server (direct script)
 sudo ./scripts/containers/virtualmin-host.sh -i 103 -n web3 -c 4 -m 4096
 ```
@@ -208,11 +212,12 @@ Common options for every container script: `-i <ctid>` (required), `-n <name>` (
 | `node-webapp` | 2 / 2048 MB / 20 GB | `--hostname`, `--db-type mariadb\|postgres`, `--db-name`, `--node-version` (22), `--app-port` (3000), `--no-nginx` |
 | `nextcloud` | 4 / 4096 MB / 32 GB | `--domain`, `--dataset`, `--trusted-proxy` |
 | `vaultwarden` | 2 / 512 MB / 8 GB | — |
+| `n8n-ai` | 2 / 2048 MB / 20 GB | `--domain`, `--n8n-version` |
 | `virtualmin-host` | 4 / 4096 MB / 32 GB | — |
 
 Credentials generated during deployment are saved on the Proxmox host to `/root/<service>-credentials-ct<ctid>.txt` (chmod 600).
 
-See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md) and [web3 (Virtualmin)](docs/virtualmin-deployment-guide.md) guides for details.
+See [Nextcloud](docs/nextcloud/deploy-guide.md), [Vaultwarden](docs/vaultwarden/deploy-guide.md), [n8n-ai](stacks/n8n-ai/README.md) and [web3 (Virtualmin)](docs/virtualmin-deployment-guide.md) guides for details.
 
 #### Network Configuration Generator
 
@@ -350,6 +355,7 @@ infrastack/
 │   │   ├── node-webapp.sh     # Node.js + PM2 + DB stack
 │   │   ├── nextcloud.sh       # Nextcloud full-stack deployment
 │   │   ├── vaultwarden.sh     # Vaultwarden deployment
+│   │   ├── n8n-ai.sh          # n8n-ai stack deployment
 │   │   └── virtualmin-host.sh # Virtualmin hosting server
 │   ├── network/
 │   │   └── generate-config.sh # Port-forwarding/NAT rule generator
@@ -366,6 +372,8 @@ infrastack/
 │           ├── logs.sh        # Log viewer
 │           ├── info.sh        # Station info
 │           └── remove.sh      # Station removal
+├── stacks/                    # Versioned Docker Compose stacks
+│   └── n8n-ai/                # n8n + task runner + PostgreSQL (pgvector)
 ├── configs/
 │   └── infrastack.conf.example
 ├── docs/

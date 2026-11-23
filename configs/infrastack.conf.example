@@ -47,6 +47,7 @@ PROXY_PUBLIC_IP="203.0.113.20"               # shown in DNS hints after deployme
 # Public service domains (default: <name>.<INFRASTACK_DOMAIN>; --domain overrides)
 #NEXTCLOUD_DOMAIN="cloud.example.com"
 #VAULTWARDEN_DOMAIN="vault.example.com"
+#N8N_DOMAIN="n8n.example.com"
 
 #=============================================================================
 # SSL certificate sync (scripts/ssl-management)
