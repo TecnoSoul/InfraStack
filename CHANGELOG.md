@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-23
+
+### Upgrading from 2.x
+Site-specific values are no longer built into the scripts. Before updating a host, add these to `/etc/infrastack/infrastack.conf` (see `configs/infrastack.conf.example`):
+- `INFRASTACK_DOMAIN`: required for container scripts unless `--hostname` is passed.
+- `SSL_REMOTE_HOST`, `SSL_REMOTE_USER`, `SSL_CERT_DIR` (and `SSL_REMOTE_PORT` if not 22) on hosts running `rsync-certs-proxmox.sh`, or keep using the legacy `.rsync-certs-proxmox.conf`.
+- `SSL_CERT_DIR` and `PROXMOX_HOSTS` on the host running `deploy-proxmox-ssl.sh`.
+- Optionally `PROXY_PUBLIC_IP`, `NEXTCLOUD_DOMAIN`, `VAULTWARDEN_DOMAIN`, and any `CT_*` values that differ from the defaults.
+
 ### Added
 - Site settings in `/etc/infrastack/infrastack.conf`: `INFRASTACK_DOMAIN`, `CT_*` network/storage/template settings, `PROXY_INTERNAL_IP`, `PROXY_PUBLIC_IP`, `NEXTCLOUD_DOMAIN`, `VAULTWARDEN_DOMAIN`, and SSL sync settings (`SSL_CERT_DIR`, `SSL_REMOTE_HOST`, `SSL_REMOTE_PORT`, `SSL_REMOTE_USER`, `PROXMOX_HOSTS`). All are documented in `configs/infrastack.conf.example`.
 - `common.sh`: `load_container_defaults` and `require_config` helpers.
@@ -81,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `install.sh` (installs to `/opt/infrastack`, symlinks `/usr/local/bin/infrastack`).
 - Proxmox SSL certificate tools: `deploy-proxmox-ssl.sh` and the pull-based `rsync-certs-proxmox.sh` with a local config file.
 
-[Unreleased]: https://github.com/TecnoSoul/InfraStack/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/TecnoSoul/InfraStack/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/TecnoSoul/InfraStack/compare/v2.2.0...v3.0.0
 [2.2.0]: https://github.com/TecnoSoul/InfraStack/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/TecnoSoul/InfraStack/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/TecnoSoul/InfraStack/compare/v1.0.0...v2.0.0

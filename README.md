@@ -326,7 +326,7 @@ Detailed documentation is available in the `docs/` directory:
 
 ```
 infrastack/
-├── infrastack.sh              # Main CLI entry point (v2.2.0)
+├── infrastack.sh              # Main CLI entry point (v3.0.0)
 ├── install.sh                 # Installation script
 ├── CHANGELOG.md               # Version history
 ├── MIGRATION.md               # RadioStack migration guide
