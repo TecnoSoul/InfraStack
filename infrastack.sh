@@ -80,6 +80,7 @@ Categories & Commands:
     node-webapp                 Node.js + PM2 + DB (MariaDB/PostgreSQL) container
     nextcloud                   Nextcloud + MariaDB + Redis on Docker
     vaultwarden                 Vaultwarden (Bitwarden-compatible) on Docker
+    n8n-ai                      n8n + task runner + PostgreSQL (pgvector) on Docker
 
   radio                         Radio platform deployment (formerly RadioStack)
     deploy <platform>           Deploy radio platform (azuracast/libretime)
@@ -262,7 +263,7 @@ main() {
         containers)
             if [[ $# -eq 0 ]]; then
                 log_error "Missing containers command"
-                echo "Usage: infrastack containers <debian-base|node-webapp|nextcloud|vaultwarden>"
+                echo "Usage: infrastack containers <debian-base|node-webapp|nextcloud|vaultwarden|n8n-ai>"
                 exit 1
             fi
             local sub="$1"; shift
@@ -271,6 +272,7 @@ main() {
                 node-webapp)  bash "$INFRASTACK_ROOT/scripts/containers/node-webapp.sh"  "$@" ;;
                 nextcloud)    bash "$INFRASTACK_ROOT/scripts/containers/nextcloud.sh"     "$@" ;;
                 vaultwarden)  bash "$INFRASTACK_ROOT/scripts/containers/vaultwarden.sh"  "$@" ;;
+                n8n-ai)       bash "$INFRASTACK_ROOT/scripts/containers/n8n-ai.sh"       "$@" ;;
                 *)  log_error "Unknown container type: $sub"; exit 1 ;;
             esac
             ;;
