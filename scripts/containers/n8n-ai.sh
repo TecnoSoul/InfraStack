@@ -335,7 +335,7 @@ Options:
 
 Examples:
     $0 -i 220 -n n8n
-    $0 -i 220 -n n8n --domain n8n.example.com --n8n-version 2.32.6
+    $0 -i 220 -n n8n --domain n8n.example.com --n8n-version 2.48.8
 
 What Gets Deployed:
     • Unprivileged LXC (nesting=1,keyctl=1 for Docker)
