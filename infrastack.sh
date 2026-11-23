@@ -50,7 +50,6 @@ VERSION="3.0.0"
 cmd_version() {
     echo "InfraStack v$VERSION"
     echo "Sysadmin Infrastructure Toolkit"
-    echo "Includes: Radio Module (formerly RadioStack)"
     echo "https://github.com/TecnoSoul/InfraStack"
 }
 

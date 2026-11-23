@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `infrastack version` no longer prints the "Includes: Radio Module (formerly RadioStack)" line.
+
 ## [3.0.0] - 2026-11-23
 
 ### Upgrading from 2.x
