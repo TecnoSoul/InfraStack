@@ -1,0 +1,105 @@
+# =============================================================================
+# InfraStack — stack n8n-ai
+# Fase 0: n8n + task runner externo + Postgres (con pgvector para más adelante)
+#
+# Basado en el ejemplo oficial "withPostgres" de n8n-io/n8n-hosting.
+# Los secretos van en .env (no versionado). Ver .env.example y scripts/gen-env.sh.
+#
+# Fases siguientes (se agregan como profiles, sin tocar lo de abajo):
+#   ai     → litellm            gateway de modelos: claves, topes, fallback
+#   local  → ollama             modelos locales en CPU
+#   chat   → open-webui         chat interno sobre el mismo gateway
+#   queue  → redis + n8n-worker si algún día hace falta escalar
+# =============================================================================
+
+name: n8n-ai
+
+x-n8n-db: &n8n-db
+  DB_TYPE: postgresdb
+  DB_POSTGRESDB_HOST: postgres
+  DB_POSTGRESDB_PORT: 5432
+  DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+  DB_POSTGRESDB_USER: ${POSTGRES_NON_ROOT_USER}
+  DB_POSTGRESDB_PASSWORD: ${POSTGRES_NON_ROOT_PASSWORD}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_NON_ROOT_USER: ${POSTGRES_NON_ROOT_USER}
+      POSTGRES_NON_ROOT_PASSWORD: ${POSTGRES_NON_ROOT_PASSWORD}
+      # Postgres 18 cambió su directorio de datos por defecto: no quitar esta línea
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - db_storage:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  n8n:
+    image: n8nio/n8n:${N8N_VERSION}
+    restart: unless-stopped
+    environment:
+      <<: *n8n-db
+      # Sin esta clave no se pueden descifrar las credenciales guardadas: va a Vaultwarden
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      # URL pública (detrás de NPM)
+      N8N_HOST: ${N8N_HOST}
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      N8N_EDITOR_BASE_URL: ${N8N_PUBLIC_URL}
+      WEBHOOK_URL: ${N8N_PUBLIC_URL}
+      N8N_PROXY_HOPS: 1
+      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
+      # Zona horaria: la usan los Schedule Trigger
+      GENERIC_TIMEZONE: ${TZ}
+      TZ: ${TZ}
+      # Task runner externo (contenedor n8n-runner): aísla el Code node
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: 0.0.0.0
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      # Higiene
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: 336        # horas (14 días de historial)
+      EXECUTIONS_TIMEOUT: 300             # segundos: corta cualquier ejecución colgada
+      # Métricas Prometheus en /metrics (bloquearlo en NPM, ver README)
+      N8N_METRICS: "true"
+    ports:
+      # NPM (otro CT) tiene que llegar a este puerto por la red interna
+      - "${N8N_BIND_ADDR}:5678:5678"
+    volumes:
+      - n8n_storage:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  n8n-runner:
+    image: n8nio/runners:${N8N_VERSION}
+    restart: unless-stopped
+    environment:
+      N8N_RUNNERS_TASK_BROKER_URI: http://n8n:5679
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+    depends_on:
+      - n8n
+    networks: [internal]
+
+volumes:
+  db_storage:
+  n8n_storage:
+
+networks:
+  internal:
