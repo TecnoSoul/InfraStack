@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `N8N_DOMAIN` setting in `configs/infrastack.conf.example`.
 - `stacks/n8n-ai`: optional `tunnel` profile with `cloudflared` for Cloudflare Tunnel + Access (no open ports, n8n bound to `127.0.0.1`), selected with `COMPOSE_PROFILES` in `.env`. `gen-env.sh --tunnel-token-file` reads the token from a file or stdin and switches the stack to tunnel mode.
 - `n8n-ai.sh`: `--tunnel-token-file` flag; the token reaches the container through stdin, never as an argument. The summary prints the Cloudflare steps (Access application first, then the public hostname) instead of the NPM ones.
+- `docs/n8n-ai/deploy-guide.md`: architecture and deployment for both access options (Cloudflare Tunnel + Access, NPM) and how to switch between them.
 
 ### Changed
+- README and CLAUDE.md: document Cloudflare Tunnel as the access option for `n8n-ai`, as an exception to the NPM convention.
 - `infrastack version` no longer prints the "Includes: Radio Module (formerly RadioStack)" line.
 
 ## [3.0.0] - 2026-11-23
